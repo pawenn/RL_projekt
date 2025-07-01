@@ -1,0 +1,1 @@
+python -m autoencoder.collect_dataset

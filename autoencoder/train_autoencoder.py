@@ -9,7 +9,7 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig
 from hydra.utils import to_absolute_path
-from auto_encoder_model import AutoEncoder
+from .auto_encoder_model import AutoEncoder
 import numpy as np
 
 @hydra.main(config_path="../configs", config_name="autoencoder", version_base="1.3")
