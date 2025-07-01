@@ -1,0 +1,7 @@
+dataset_path: data/CarRacing-v3-frames-small_stacked
+latent_dim: 32
+batch_size: 64
+epochs: 3
+lr: 0.001
+save_path: autoencoder/models/encoder_small.pth
+subset_fraction: 0.5

@@ -1,0 +1,7 @@
+torch
+torchvision
+gymnasium[box2d]
+numpy
+matplotlib
+hydra-core
+tqdm

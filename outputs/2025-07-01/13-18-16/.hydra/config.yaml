@@ -1,0 +1,8 @@
+frame_dir: autoencoder/data/images_carracing_v3
+latent_dim: 32
+batch_size: 64
+epochs: 20
+lr: 0.001
+save_path: models/encoder.pt
+dataset_num_episodes: 50
+frames_stack_size: 4

@@ -1,0 +1,6 @@
+dataset_path: data/CarRacing-v3-frames_stacked
+latent_dim: 32
+batch_size: 64
+epochs: 5
+lr: 0.001
+save_path: models/encoder.pt
