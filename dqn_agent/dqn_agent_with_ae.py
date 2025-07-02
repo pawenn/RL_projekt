@@ -41,6 +41,7 @@ class DQNAgentWithAE(AbstractAgent):
         target_update_freq: int = 1000,
         ae_latent_dim: int = 32,
         seed: int = 0,
+        frame_stack_size=4,
     ) -> None:
         """
         Initialize replay buffer, Q‐networks, optimizer, and hyperparameters.
@@ -102,6 +103,13 @@ class DQNAgentWithAE(AbstractAgent):
         self.optimizer = optim.Adam(self.q.parameters(), lr=lr)
         self.buffer = ReplayBuffer(buffer_capacity)
 
+        # This should only list the MLP header wights of the Q network
+        # just to be sure the weights of the plugged in AE layers arent changed during training
+        print("Trainable parameters:")
+        for name, param in self.q.named_parameters():
+            if param.requires_grad:
+                print(f" - {name} | shape: {param.shape}")
+
         # hyperparams
         self.batch_size = batch_size
         self.gamma = gamma
@@ -111,6 +119,7 @@ class DQNAgentWithAE(AbstractAgent):
         self.target_update_freq = target_update_freq
 
         self.total_steps = 0  # for ε decay and target sync
+        self.frame_stack_size = frame_stack_size
 
     def epsilon(self) -> float:
         """
@@ -218,21 +227,20 @@ class DQNAgentWithAE(AbstractAgent):
         """
         # unpack
         states, actions, rewards, next_states, dones, _ = zip(*training_batch)
-        s = torch.tensor(np.array(states)).permute(0, 3, 1, 2).float() / 255.0
-        s_next = torch.tensor(np.array(next_states)).permute(0, 3, 1, 2).float() / 255.0
+        s = torch.tensor(np.array(states)).float() / 255.0
+
+        s_next = torch.tensor(np.array(next_states)).float() / 255.0
         a = torch.tensor(np.array(actions), dtype=torch.int64).unsqueeze(1)
         r = torch.tensor(np.array(rewards), dtype=torch.float32)
         mask = torch.tensor(np.array(dones), dtype=torch.float32)
 
         # current Q estimates for taken actions
-        print(s.shape)
         pred = self.q(s).gather(1, a).squeeze(1)
 
         # compute TD target with frozen network
         with torch.no_grad():
             next_q = self.target_q(s_next).max(1)[0]
             target = r + self.gamma * next_q * (1 - mask)
-
         loss = nn.MSELoss()(pred, target)
 
         # gradient step
@@ -246,52 +254,99 @@ class DQNAgentWithAE(AbstractAgent):
 
         self.total_steps += 1
         return float(loss.item())
+    
+    def evaluate_policy(self, episodes=5):
+        total_rewards = []
+        for _ in range(episodes):
+            obs, _ = self.env.reset()
+            frame_buffer = deque(maxlen=self.frame_stack_size)
+            for _ in range(self.frame_stack_size):
+                frame = obs.transpose(2, 0, 1)
+                frame_buffer.append(frame)
+            state = np.concatenate(frame_buffer, axis=0)
+
+            done = False
+            truncated = False
+            ep_reward = 0
+            while not (done or truncated):
+                action = self.predict_action(state, evaluate=True)
+                obs, reward, done, truncated, _ = self.env.step(action)
+                frame = obs.transpose(2, 0, 1)
+                frame_buffer.append(frame)
+                state = np.concatenate(frame_buffer, axis=0)
+                ep_reward += reward
+            total_rewards.append(ep_reward)
+
+        return np.mean(total_rewards)
 
     def train(self, num_frames: int, eval_interval: int = 1000) -> None:
         """
-        Run a training loop for a fixed number of frames.
-
-        Parameters
-        ----------
-        num_frames : int
-            Total environment steps.
-        eval_interval : int
-            Every this many episodes, print average reward.
+        Run a training loop with RGB frame stacking. Stacked state has shape [12, H, W].
         """
 
-        state, _ = self.env.reset()
-        ep_reward = 0.0
+        #init Framebuffer & rewards
+        N = self.frame_stack_size
+        frame_buffer = deque(maxlen=N)
         recent_rewards: List[float] = []
+        ep_reward = 0.0
 
-        for frame in range(1, num_frames + 1):
-            action = self.predict_action(state)
-            next_state, reward, done, truncated, _ = self.env.step(action)
+        #reset env and fill frame buffer
+        obs, _ = self.env.reset()
+        for _ in range(N):
+            frame = obs.transpose(2, 0, 1)  # [H, W, 3] → [3, H, W]
+            frame_buffer.append(frame)
 
-            # store and step
-            self.buffer.add(state, action, reward, next_state, done or truncated, {})
-            state = next_state
+        # helper to stack frames -> frame_stack_size * RGB, height, width -> 4 *3, 96, 96  
+        def get_stacked_state():
+            return np.concatenate(frame_buffer, axis=0)  # [12, H, W]
+
+        stacked_state = get_stacked_state()
+
+        # start Training
+        for step in range(1, num_frames + 1):
+            ### EXPERIENCE REPLAY ###
+            action = self.predict_action(stacked_state)
+
+            next_obs, reward, done, truncated, _ = self.env.step(action)
+            next_frame = next_obs.transpose(2, 0, 1)  # [H, W, 3] → [3, H, W]
+            frame_buffer.append(next_frame)
+            stacked_next_state = get_stacked_state()
+            
+            self.buffer.add(stacked_state, action, reward, stacked_next_state, done or truncated, {})
+
+            stacked_state = stacked_next_state
             ep_reward += reward
 
-            # update if ready
+            ### EXPERIENCE REPLAY ###
             if len(self.buffer) >= self.batch_size:
                 batch = self.buffer.sample(self.batch_size)
                 loss = self.update_agent(batch)
 
-                if frame % 500 == 0:
-                    print(f"[Step {frame}] Loss: {loss:.4f} | Buffer size: {len(self.buffer)}")
+                if step % 500 == 0:
+                    print(f"[Step {step}] Loss: {loss:.4f} | Buffer size: {len(self.buffer)}")
 
+            # Handle episode end
             if done or truncated:
-                state, _ = self.env.reset()
+                obs, _ = self.env.reset()
+                for _ in range(N):
+                    frame = obs.transpose(2, 0, 1)
+                    frame_buffer.append(frame)
+                stacked_state = get_stacked_state()
+
                 recent_rewards.append(ep_reward)
                 ep_reward = 0.0
-                # logging
+
                 if len(recent_rewards) % 10 == 0:
                     avg = np.mean(recent_rewards[-10:])
-                    print(
-                        f"Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}"
-                    )
+                    print(f"Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}")
 
+            # evaluation 
+            
+            if step % eval_interval == 0:
+                eval_reward = self.evaluate_policy()
+                print(f"[Eval @ Frame {step}] AvgEvalReward: {eval_reward:.2f}")
         print("Training complete.")
+
 
 
 @hydra.main(config_path="../configs/", config_name="dqn_ae_config", version_base="1.1")
@@ -313,6 +368,7 @@ def main(cfg: DictConfig):
         target_update_freq=cfg.agent.target_update_freq,
         ae_latent_dim=cfg.agent.latent_dim,
         seed=cfg.seed,
+        frame_stack_size=cfg.env.frame_stack,
     )
 
     # 3) instantiate & train

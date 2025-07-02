@@ -2,7 +2,7 @@
 
 env:
   name: CarRacing-v3
-  frame_stack: 1
+  frame_stack: 4
 
 seed: 0
 
