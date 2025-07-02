@@ -9,11 +9,11 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from dqn_agent.buffers import ReplayBuffer
+from .buffers import ReplayBuffer
 from .utils import set_seed
 
 from agent.abstract_agent import AbstractAgent
-from dqn_agent.networks import QNetworkWithAE
+from .q_networks import QNetworkWithAE
 import gymnasium as gym
 
 
