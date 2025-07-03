@@ -21,7 +21,7 @@ def train(cfg: DictConfig):
     full_dataset = CarRacingDataset(dataset_path, subset_fraction=cfg.subset_fraction)
 
     # Calculate split sizes
-    val_fraction = 0.2
+    val_fraction = cfg.val_set_size
     val_size = int(len(full_dataset) * val_fraction)
     train_size = len(full_dataset) - val_size
 

@@ -86,6 +86,7 @@ def build_stacked_dataset(frame_paths, num_episodes, max_steps, save_dir: Path, 
         if len(episode) < stack_size:
             continue
         for i in range(len(episode) - stack_size + 1):
+        
             imgs = [np.array(Image.open(p)) for p in episode[i:i + stack_size]]
             stacked_img = np.concatenate(imgs, axis=2)  # (96, 96, 12)
             stacked_img = stacked_img.astype(np.float32) / 255.0

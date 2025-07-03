@@ -1,7 +1,8 @@
-dataset_path: data/CarRacing-v3-frames_stacked
+dataset_path: data/CarRacing-v3-frames-test_stacked
 latent_dim: 32
 batch_size: 64
-epochs: 3
+epochs: 10
 lr: 0.001
 save_path: autoencoder/models/autoencoder.pth
-subset_fraction: 0.5
+subset_fraction: 1
+val_set_size: 0.2
