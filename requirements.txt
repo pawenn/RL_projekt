@@ -1,7 +1,50 @@
-torch
-torchvision
-gymnasium[box2d]
-numpy
-matplotlib
-hydra-core
-tqdm
+antlr4-python3-runtime 4.9.3
+box2d-py               2.3.5
+cloudpickle            3.1.1
+colorama               0.4.6
+contourpy              1.3.2
+cycler                 0.12.1
+decorator              5.2.1
+Farama-Notifications   0.0.4
+filelock               3.18.0
+fonttools              4.58.4
+fsspec                 2025.5.1
+gym-notices            0.0.8
+gymnasium              1.2.0
+hydra-core             1.3.2
+imageio                2.37.0
+imageio-ffmpeg         0.6.0
+Jinja2                 3.1.6
+kiwisolver             1.4.8
+lz4                    4.4.4
+MarkupSafe             3.0.2
+matplotlib             3.10.3
+moviepy                2.2.1
+mpmath                 1.3.0
+networkx               3.5
+numpy                  2.2.6
+omegaconf              2.3.0
+opencv-python          4.12.0.88
+packaging              25.0
+pandas                 2.3.1
+pillow                 11.3.0
+pip                    25.1
+proglog                0.1.12
+pygame                 2.6.1
+pyparsing              3.2.3
+python-dateutil        2.9.0.post0
+python-dotenv          1.1.1
+pytz                   2025.2
+PyYAML                 6.0.2
+seaborn                0.13.2
+setuptools             78.1.1
+six                    1.17.0
+swig                   4.3.1
+sympy                  1.14.0
+torch                  2.7.1+cu118
+torchaudio             2.7.1+cu118
+torchvision            0.22.1
+tqdm                   4.67.1
+typing_extensions      4.14.0
+tzdata                 2025.2
+wheel                  0.45.1
