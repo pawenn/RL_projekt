@@ -63,7 +63,7 @@ class DQNAgent(AbstractAgent):
         epsilon_decay: int = 500,
         target_update_freq: int = 1000,
         seed: int = 0,
-        device = 'cpu'
+        device = 'cpu'  # new
     ) -> None:
         """
         Initialize replay buffer, Q‐networks, optimizer, and hyperparameters.
@@ -110,11 +110,11 @@ class DQNAgent(AbstractAgent):
 
         obs_dim = env.observation_space.shape
         n_actions = env.action_space.n
-        feature_dim = 50
+        feature_dim = 50  # new
 
-        self.cnn: PixelEncoder = make_encoder('pixel', obs_dim, feature_dim, 4, 32).to(self.device)
-        self.target_cnn: PixelEncoder = make_encoder('pixel', obs_dim, feature_dim, 4, 32).to(self.device)
-        self.target_cnn.load_state_dict(self.cnn.state_dict())
+        self.cnn: PixelEncoder = make_encoder('pixel', obs_dim, feature_dim, 4, 32).to(self.device)  # new
+        self.target_cnn: PixelEncoder = make_encoder('pixel', obs_dim, feature_dim, 4, 32).to(self.device)  # new
+        self.target_cnn.load_state_dict(self.cnn.state_dict())  # new
 
         # main Q‐network and frozen target
         self.q = QNetwork(feature_dim, n_actions).to(self.device)
