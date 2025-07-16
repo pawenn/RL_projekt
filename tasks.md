@@ -1,6 +1,6 @@
 - per agent: 
     - init()
-    - predict_agent()
+    - predict_action()
     - update_agent()
 
 - 3 subclasses of dqn_agent

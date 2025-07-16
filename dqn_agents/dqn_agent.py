@@ -104,17 +104,18 @@ class DQNAgent(AbstractAgent):
         self.seed = seed
         self.device = device
         print(f"Using device: {self.device}")
-        obs_dim = env.observation_space.shape
+        self.obs_dim = env.observation_space.shape
         n_actions = env.action_space.n
-        feature_dim = 50  # new
-
-        self.cnn: PixelEncoder = make_encoder('pixel', obs_dim, feature_dim, 4, 32).to(self.device)  # new
-        self.target_cnn: PixelEncoder = make_encoder('pixel', obs_dim, feature_dim, 4, 32).to(self.device)  # new
+        self.feature_dim = 50  
+        self.num_encoder_decoder_layers = 4  
+        self.num_encoder_decoder_filters = 32
+        self.cnn: PixelEncoder = make_encoder('pixel', self.obs_dim, self.feature_dim, self.num_encoder_decoder_layers, self.num_encoder_decoder_filters).to(self.device)  # new
+        self.target_cnn: PixelEncoder = make_encoder('pixel', self.obs_dim, self.feature_dim, self.num_encoder_decoder_layers, self.num_encoder_decoder_filters).to(self.device)  # new
         self.target_cnn.load_state_dict(self.cnn.state_dict())  # new
 
         # main Q‐network and frozen target
-        self.q = QNetwork(feature_dim, n_actions).to(self.device)
-        self.target_q = QNetwork(feature_dim, n_actions).to(self.device)
+        self.q = QNetwork(self.feature_dim, n_actions).to(self.device)
+        self.target_q = QNetwork(self.feature_dim, n_actions).to(self.device)
         self.target_q.load_state_dict(self.q.state_dict())
 
         self.optimizer = optim.Adam(self.q.parameters(), lr=lr)
