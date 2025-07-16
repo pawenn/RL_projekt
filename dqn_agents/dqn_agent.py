@@ -9,11 +9,11 @@ import torch.nn as nn
 import torch.optim as optim
 from omegaconf import DictConfig
 from .abstract_agent import AbstractAgent
-from ..buffer.buffers import ReplayBuffer
-from ..networks.q_network import QNetwork
+from buffer.buffers import ReplayBuffer
+from networks.q_network import QNetwork
+from utils.frame_stack_wrapper import FrameStack
 
-
-from ..networks.encoder import make_encoder, PixelEncoder
+from networks.encoder import make_encoder, PixelEncoder
 
 
 def set_seed(env: gym.Env, seed: int = 0) -> None:
@@ -103,7 +103,7 @@ class DQNAgent(AbstractAgent):
         set_seed(env, seed)
         self.seed = seed
         self.device = device
-
+        print(f"Using device: {self.device}")
         obs_dim = env.observation_space.shape
         n_actions = env.action_space.n
         feature_dim = 50  # new
@@ -325,11 +325,12 @@ class DQNAgent(AbstractAgent):
         # training_data.to_csv(f"training_data_DQN_seed_{self.seed}.csv", index=False)
 
 
-@hydra.main(config_path="../configs/agent/", config_name="dqn", version_base="1.1")
+@hydra.main(config_path="../configs/", config_name="dqn_agent_RI", version_base="1.1")
 def main(cfg: DictConfig):
     
     # 1) build env
-    env = gym.make(cfg.env.name, continuosus=False)
+    env = gym.make(cfg.env.name,  continuous=False)
+    env = FrameStack(env, k=3)
     # env = gym.make(cfg.env.name, render_mode="human")
     seed=1234
     set_seed(env, seed)

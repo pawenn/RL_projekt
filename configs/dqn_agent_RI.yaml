@@ -15,3 +15,7 @@ agent:
   epsilon_final: 0.01
   epsilon_decay: 500
   target_update_freq: 1000
+
+train:
+  num_frames: 500000
+  eval_interval: 1000
