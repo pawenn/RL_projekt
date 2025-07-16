@@ -12,12 +12,12 @@ import gymnasium as gym
 import torch.nn as nn
 
 class DQNAgentAErecon(DQNAgent):
-    def __init__(self, *args, recon_weight: float = 1.0, latent_l2_weight: float = 1e-6, decoder_update_freq = 1, **kwargs):
+    def __init__(self, *args,  decoder_latent_lambda: float = 1e-6, decoder_update_freq = 1, **kwargs):
         super().__init__(*args, **kwargs)
         self.decoder_update_freq = decoder_update_freq 
 
-        self.recon_weight = recon_weight
-        self.latent_l2_weight = latent_l2_weight
+        
+        self.decoder_latent_lambda = decoder_latent_lambda
 
         self.decoder = make_decoder('pixel', self.obs_dim, self.feature_dim, self.num_encoder_decoder_layers, self.num_encoder_decoder_filters).to(self.device)
         self.decoder_optimizer = torch.optim.Adam(self.decoder.parameters(), lr=self.optimizer.param_groups[0]['lr'])
@@ -78,7 +78,7 @@ class DQNAgentAErecon(DQNAgent):
         recon_loss = F.mse_loss(recon, target_obs)
         latent_loss = 0.5 * h.pow(2).sum(dim=1).mean() 
 
-        ae_loss = self.recon_weight * recon_loss + self.latent_l2_weight * latent_loss
+        ae_loss = recon_loss + self.decoder_latent_lambda * latent_loss
 
         ae_loss.backward()
         self.encoder_optimizer.step()
@@ -116,8 +116,7 @@ def main(cfg: DictConfig):
         target_update_freq=1000,
         seed=seed,
         device=device,
-        recon_weight=cfg.agent.recon_weight,
-        latent_l2_weight=cfg.agent.latent_l2_weight,
+        decoder_latent_lambda=cfg.agent.decoder_latent_lambda,
         decoder_update_freq=cfg.agent.decoder_update_freq,
     )
 
