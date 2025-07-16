@@ -1,0 +1,17 @@
+seed: 1234
+
+device: "cuda" 
+
+env:
+  name: "CarRacing-v3"
+  frame_stack: 3
+
+agent:
+  buffer_capacity: 10000
+  batch_size: 32
+  lr: 0.001
+  gamma: 0.99
+  epsilon_start: 1.0
+  epsilon_final: 0.01
+  epsilon_decay: 500
+  target_update_freq: 1000
