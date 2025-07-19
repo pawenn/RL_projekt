@@ -3,7 +3,7 @@ seed: 1234
 device: "cuda" 
 
 env:
-  name: "CarRacing-v3"
+  name: "CartPole-v1"
   frame_stack: 3
 
 agent:
@@ -15,9 +15,7 @@ agent:
   epsilon_final: 0.01
   epsilon_decay: 500
   target_update_freq: 1000
-  feature_dim: 50
-  num_conv_layers: 4
-  num_conv_filters: 32
+  # feature_dim: 50
 
 train:
   num_frames: 100000

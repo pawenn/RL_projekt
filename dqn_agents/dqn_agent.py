@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from typing import Any, Dict, List, Tuple
 import time
 import gymnasium as gym
@@ -8,12 +12,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from omegaconf import DictConfig
-from .abstract_agent import AbstractAgent
+from abstract_agent import AbstractAgent
 from buffer.buffers import ReplayBuffer
 from networks.q_network import QNetwork
 from utils.frame_stack_wrapper import FrameStack
-
-from networks.encoder import make_encoder, PixelEncoder
 
 
 def set_seed(env: gym.Env, seed: int = 0) -> None:
@@ -59,7 +61,8 @@ class DQNAgent(AbstractAgent):
         epsilon_decay: int = 500,
         target_update_freq: int = 1000,
         seed: int = 0,
-        device = 'cpu'  # new
+        feature_dim: int | None = None,
+        device = torch.device('cpu')
     ) -> None:
         """
         Initialize replay buffer, Q‐networks, optimizer, and hyperparameters.
@@ -86,6 +89,10 @@ class DQNAgent(AbstractAgent):
             How many updates between target‐network syncs.
         seed : int
             RNG seed.
+        feature_dim : int | None
+            If not None, specifies input-dim of Q-Network (else obs-dim is used).
+        device : device
+            The device that is used (cpu or cuda).
         """
         super().__init__(
             env,
@@ -100,18 +107,14 @@ class DQNAgent(AbstractAgent):
             seed,
         )
         self.env = env
-        set_seed(env, seed)
         self.seed = seed
+        set_seed(env, seed)
         self.device = device
         print(f"Using device: {self.device}")
-        self.obs_dim = env.observation_space.shape
+
+        # Dimension values for Q-Networks
+        self.feature_dim = feature_dim if feature_dim is not None else env.observation_space.shape[0]
         n_actions = env.action_space.n
-        self.feature_dim = 50  
-        self.num_encoder_decoder_layers = 4  
-        self.num_encoder_decoder_filters = 32
-        self.cnn: PixelEncoder = make_encoder('pixel', self.obs_dim, self.feature_dim, self.num_encoder_decoder_layers, self.num_encoder_decoder_filters).to(self.device)  # new
-        self.target_cnn: PixelEncoder = make_encoder('pixel', self.obs_dim, self.feature_dim, self.num_encoder_decoder_layers, self.num_encoder_decoder_filters).to(self.device)  # new
-        self.target_cnn.load_state_dict(self.cnn.state_dict())  # new
 
         # main Q‐network and frozen target
         self.q = QNetwork(self.feature_dim, n_actions).to(self.device)
@@ -119,11 +122,11 @@ class DQNAgent(AbstractAgent):
         self.target_q.load_state_dict(self.q.state_dict())
 
         self.optimizer = optim.Adam(self.q.parameters(), lr=lr)
-        self.cnn_optimizer = optim.Adam(self.cnn.parameters(), lr=lr)
         self.buffer = ReplayBuffer(buffer_capacity)
 
         # hyperparams
         self.batch_size = batch_size
+        self.lr = lr
         self.gamma = gamma
         self.epsilon_start = epsilon_start
         self.epsilon_final = epsilon_final
@@ -131,6 +134,7 @@ class DQNAgent(AbstractAgent):
         self.target_update_freq = target_update_freq
 
         self.total_steps = 0  # for ε decay and target sync
+
 
     def epsilon(self) -> float:
         """
@@ -144,6 +148,7 @@ class DQNAgent(AbstractAgent):
         return self.epsilon_final + (self.epsilon_start - self.epsilon_final) * np.exp(
             -1.0 * self.total_steps / self.epsilon_decay
         )
+
 
     def predict_action(
         self, state: np.ndarray, info: Dict[str, Any] = {}, evaluate: bool = False
@@ -170,8 +175,7 @@ class DQNAgent(AbstractAgent):
             # purely greedy
             t = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
             with torch.no_grad():
-                z = self.cnn(t)
-                qvals = self.q(z)
+                qvals = self.q(t)
             action = int(torch.argmax(qvals, dim=1).item())
         else:
             # ε-greedy
@@ -180,11 +184,11 @@ class DQNAgent(AbstractAgent):
             else:
                 t = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
                 with torch.no_grad():
-                    z = self.cnn(t)
-                    qvals = self.q(z)
+                    qvals = self.q(t)
                 action = int(torch.argmax(qvals, dim=1).item())
 
         return action
+
 
     def save(self, path: str) -> None:
         """
@@ -203,6 +207,7 @@ class DQNAgent(AbstractAgent):
             path,
         )
 
+
     def load(self, path: str) -> None:
         """
         Load model & optimizer state from disk.
@@ -216,9 +221,10 @@ class DQNAgent(AbstractAgent):
         self.q.load_state_dict(checkpoint["parameters"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])
 
+
     def update_agent(
         self, training_batch: List[Tuple[Any, Any, float, Any, bool, Dict]]
-    ) -> float:
+        ):
         """
         Perform one gradient update on a batch of transitions.
 
@@ -241,33 +247,30 @@ class DQNAgent(AbstractAgent):
         mask = torch.tensor(np.array(dones), dtype=torch.float32).to(self.device)
 
         # current Q estimates for taken actions
-        z = self.cnn(s)
-        pred = self.q(z).gather(1, a).squeeze(1)
+        pred = self.q(s).gather(1, a).squeeze(1)
 
         # compute TD target with frozen network
         with torch.no_grad():
-            next_z = self.target_cnn(s_next)
-            next_q = self.target_q(next_z).max(1)[0]
+            next_q = self.target_q(s_next).max(1)[0]
             target = r + self.gamma * next_q * (1 - mask)
 
         loss = nn.MSELoss()(pred, target)
 
         # gradient step
         self.optimizer.zero_grad()
-        self.cnn_optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        self.cnn_optimizer.step()
 
         # occasionally sync target network
         if self.total_steps % self.target_update_freq == 0:
             self.target_q.load_state_dict(self.q.state_dict())
-            self.target_cnn.load_state_dict(self.cnn.state_dict())
 
         self.total_steps += 1
+
         return float(loss.item())
 
-    def train(self, num_frames: int, eval_interval: int = 1000, bin_size: int = 1000) -> None:
+
+    def train(self, num_frames: int, eval_interval: int = 1000) -> None:
         """
         Run a training loop for a fixed number of frames.
 
@@ -297,7 +300,7 @@ class DQNAgent(AbstractAgent):
             # update if ready
             if len(self.buffer) >= self.batch_size:
                 batch = self.buffer.sample(self.batch_size)
-                _ = self.update_agent(batch)
+                loss = self.update_agent(batch)
 
             if done or truncated:
                 state, _ = self.env.reset()
@@ -326,29 +329,28 @@ class DQNAgent(AbstractAgent):
         # training_data.to_csv(f"training_data_DQN_seed_{self.seed}.csv", index=False)
 
 
-@hydra.main(config_path="../configs/", config_name="dqn_agent_RI", version_base="1.1")
+@hydra.main(config_path="../configs/", config_name="dqn_agent", version_base="1.1")
 def main(cfg: DictConfig):
     
     # 1) build env
-    env = gym.make(cfg.env.name,  continuous=False)
-    env = FrameStack(env, k=3)
-    # env = gym.make(cfg.env.name, render_mode="human")
-    seed=1234
+    env = gym.make(cfg.env.name)
+    seed = cfg.seed
     set_seed(env, seed)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # 2) map config → agent kwargs
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     agent_kwargs = dict(
-        buffer_capacity=10000,
-        batch_size=32,
-        lr=0.001,
-        gamma=0.99,
-        epsilon_start=1.0,
-        epsilon_final=0.01,
-        epsilon_decay=500,
-        target_update_freq=1000,
+        buffer_capacity=cfg.agent.buffer_capacity,
+        batch_size=cfg.agent.batch_size,
+        lr=cfg.agent.lr,
+        gamma=cfg.agent.gamma,
+        epsilon_start=cfg.agent.epsilon_start,
+        epsilon_final=cfg.agent.epsilon_final,
+        epsilon_decay=cfg.agent.epsilon_decay,
+        target_update_freq=cfg.agent.target_update_freq,
+        # feature_dim=cfg.agent.feature_dim,
+        device=device,
         seed=seed,
-        device=device
     )
 
     # 3) instantiate & train
