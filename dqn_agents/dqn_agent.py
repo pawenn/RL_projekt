@@ -370,7 +370,7 @@ class DQNAgent(AbstractAgent):
                 log_entry = {
                     "frame": frame,
                     "episode": len(episode_rewards),
-                    "reward": ep_reward,
+                    "reward": episode_rewards[-1],
                     "epsilon": self.epsilon(),
                     "time": now - start,
                     "avg_eval_reward": None,
@@ -382,7 +382,7 @@ class DQNAgent(AbstractAgent):
             if frame % eval_interval == 0:
                 avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(num_episodes=5)
                 print(f"[EVAL] Frame {frame}: Average Eval Reward over 5 episodes: {avg_eval_reward:.2f}, Average episode length: {avg_eval_episode_length:.2f}")
-                log_data[-1]["avg_eval_reward"] = avg_eval_reward
+                log_data[-1]["avg_eval_reward"] = round(avg_eval_reward, 2)
                 log_data[-1]["avg_eval_episode_length"] = avg_eval_episode_length
 
         print("Training complete.")
@@ -392,7 +392,7 @@ class DQNAgent(AbstractAgent):
             f"DONE: Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}; Time ={now - start}"
         )
         df = pd.DataFrame(log_data)
-        df.to_csv("training_and_eval_log.csv", index=False)
+        df.to_csv("training_and_eval_log.csv", index=False, sep=";")
         print("Saved training_and_eval_log.csv")
         
 
