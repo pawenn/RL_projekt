@@ -155,7 +155,7 @@ class DQNAgentAErecon(DQNAgent):
 def main(cfg: DictConfig):
     
     # 1) build env
-    env = gym.make(cfg.env.name,  continuous=False)
+    env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
     env = FrameStack(env, k=3)
     # env = gym.make(cfg.env.name, render_mode="human")
     seed=1234
@@ -176,6 +176,7 @@ def main(cfg: DictConfig):
         seed=seed,
         device=device,
         feature_dim=cfg.agent.feature_dim,
+        record_video=cfg.train.record_video
     )
 
     # 3) instantiate & train

@@ -22,3 +22,4 @@ agent:
 train:
   num_frames: 100000
   eval_interval: 1000
+  record_video: false

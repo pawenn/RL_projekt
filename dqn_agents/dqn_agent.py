@@ -16,6 +16,7 @@ from .abstract_agent import AbstractAgent
 from buffer.buffers import ReplayBuffer
 from networks.q_network import QNetwork
 from utils.frame_stack_wrapper import FrameStack
+from video.video_recorder import VideoRecorder
 
 
 def set_seed(env: gym.Env, seed: int = 0) -> None:
@@ -62,7 +63,8 @@ class DQNAgent(AbstractAgent):
         target_update_freq: int = 1000,
         seed: int = 0,
         feature_dim: int | None = None,
-        device = torch.device('cpu')
+        device = torch.device('cpu'),
+        record_video: bool = False
     ) -> None:
         """
         Initialize replay buffer, Q‐networks, optimizer, and hyperparameters.
@@ -135,6 +137,12 @@ class DQNAgent(AbstractAgent):
 
         self.total_steps = 0  # for ε decay and target sync
 
+        #video recorder
+        self.record_video = record_video
+        if self.record_video:
+            self.video_path = os.path.join(os.getcwd(), 'video', 'recordings')
+            os.makedirs(self.video_path, exist_ok=True)
+            self.video = VideoRecorder(self.video_path)
 
     def epsilon(self) -> float:
         """
@@ -327,10 +335,14 @@ class DQNAgent(AbstractAgent):
         log_data = []
         start = time.time()
 
+        if self.record_video:
+            self.video.init(enabled=True)
+
         for frame in range(1, num_frames + 1):
             action = self.predict_action(state)
             next_state, reward, done, truncated, _ = self.env.step(action)
-
+            if self.record_video:
+                self.video.record(self.env)
             # store and step
             self.buffer.add(state, action, reward, next_state, done or truncated, {})
             state = next_state
@@ -342,18 +354,17 @@ class DQNAgent(AbstractAgent):
                 loss = self.update_agent(batch)
 
             if done or truncated:
+                video_filename = f"episode_{len(episode_rewards)}.mp4"
+                self.video.save(video_filename)
+                
                 state, _ = self.env.reset()
+                if self.record_video:
+                    self.video.init(enabled=True)
+
                 recent_rewards.append(ep_reward)
                 episode_rewards.append(ep_reward)
                 steps.append(frame)
                 ep_reward = 0.0
-                # logging
-                # if len(recent_rewards) % 10 == 0:
-                    # avg = np.mean(recent_rewards[-10:])
-                    # now = time.time()
-                    # print(
-                    #     f"Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}; {start=} - {now=} - diff={now - start}"
-                    # )
                 now = time.time()
                 print(f"Frame {frame}, Episode: {len(episode_rewards)}, Reward: {episode_rewards[-1]}; Time ={now - start}")
                 log_entry = {
@@ -383,8 +394,7 @@ class DQNAgent(AbstractAgent):
         df = pd.DataFrame(log_data)
         df.to_csv("training_and_eval_log.csv", index=False)
         print("Saved training_and_eval_log.csv")
-        # training_data = pd.DataFrame({"steps": steps, "rewards": episode_rewards, "bin": [s // bin_size for s in steps]})
-        # training_data.to_csv(f"training_data_DQN_seed_{self.seed}.csv", index=False)
+        
 
 
 @hydra.main(config_path="../configs/", config_name="dqn_agent", version_base="1.1")
@@ -409,6 +419,7 @@ def main(cfg: DictConfig):
         # feature_dim=cfg.agent.feature_dim,
         device=device,
         seed=seed,
+        record_video=cfg.train.record_video
     )
 
     # 3) instantiate & train
