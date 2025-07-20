@@ -8,7 +8,7 @@ import gymnasium as gym
 import hydra
 from omegaconf import DictConfig
 
-from dqn_agent import DQNAgent, set_seed
+from .dqn_agent import DQNAgent, set_seed
 from networks.encoder import make_encoder, PixelEncoder
 from utils.frame_stack_wrapper import FrameStack
 
@@ -51,7 +51,7 @@ class DQNAgentRI(DQNAgent):
 
         Parameters
         ----------
-        state : np.ndarray
+        state : np.ndarray 
             Current observation.
         info : dict
             Gym info dict (unused here).

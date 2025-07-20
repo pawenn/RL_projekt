@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from omegaconf import DictConfig
-from abstract_agent import AbstractAgent
+from .abstract_agent import AbstractAgent
 from buffer.buffers import ReplayBuffer
 from networks.q_network import QNetwork
 from utils.frame_stack_wrapper import FrameStack
@@ -268,6 +268,44 @@ class DQNAgent(AbstractAgent):
         self.total_steps += 1
 
         return float(loss.item())
+    
+
+    def evaluate_policy(self, num_episodes: int = 5) -> float:
+        """
+        Runs the policy without exploration to evaluate its performance.
+
+        Parameters
+        ----------
+        num_episodes : int
+            Number of episodes to average over.
+
+        Returns
+        -------
+        float
+            Average total reward per episode.
+        """
+      
+
+        eval_env = gym.make(self.env.unwrapped.spec.id,  continuous=False)
+        eval_env = FrameStack(eval_env, k=3)
+        total_reward = 0.0
+        episode_steps = 0
+        for _ in range(num_episodes):
+            state, _ = eval_env.reset()
+            done = False
+            episode_reward = 0.0
+            
+            while not done:
+                action = self.predict_action(state, evaluate=True)
+                state, reward, terminated, truncated, _ = eval_env.step(action)
+                done = terminated or truncated
+                episode_reward += reward
+                episode_steps += 1
+            total_reward += episode_reward
+
+        avg_reward = total_reward / num_episodes
+        avg_episode_length = episode_steps / num_episodes
+        return avg_reward, avg_episode_length
 
 
     def train(self, num_frames: int, eval_interval: int = 1000) -> None:
@@ -286,6 +324,7 @@ class DQNAgent(AbstractAgent):
         recent_rewards: List[float] = []
         episode_rewards = []
         steps = []
+        log_data = []
         start = time.time()
 
         for frame in range(1, num_frames + 1):
@@ -316,15 +355,34 @@ class DQNAgent(AbstractAgent):
                     #     f"Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}; {start=} - {now=} - diff={now - start}"
                     # )
                 now = time.time()
-                print(f"Frame {frame}, Episode: {len(episode_rewards)}, Reward: {episode_rewards[-1]}; {start=} - {now=} - diff={now - start}")
+                print(f"Frame {frame}, Episode: {len(episode_rewards)}, Reward: {episode_rewards[-1]}; Time ={now - start}")
+                log_entry = {
+                    "frame": frame,
+                    "episode": len(episode_rewards),
+                    "reward": ep_reward,
+                    "epsilon": self.epsilon(),
+                    "time": now - start,
+                    "avg_eval_reward": None,
+                    "avg_eval_episode_length": None
+                }
+                log_data.append(log_entry)
 
+            # Evaluation
+            if frame % eval_interval == 0:
+                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(num_episodes=5)
+                print(f"[EVAL] Frame {frame}: Average Eval Reward over 5 episodes: {avg_eval_reward:.2f}, Average episode length: {avg_eval_episode_length:.2f}")
+                log_data[-1]["avg_eval_reward"] = avg_eval_reward
+                log_data[-1]["avg_eval_episode_length"] = avg_eval_episode_length
 
         print("Training complete.")
         avg = np.mean(recent_rewards[-10:])
         now = time.time()
         print(
-            f"DONE: Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}; {start=} - {now=} - diff={now - start}"
+            f"DONE: Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}; Time ={now - start}"
         )
+        df = pd.DataFrame(log_data)
+        df.to_csv("training_and_eval_log.csv", index=False)
+        print("Saved training_and_eval_log.csv")
         # training_data = pd.DataFrame({"steps": steps, "rewards": episode_rewards, "bin": [s // bin_size for s in steps]})
         # training_data.to_csv(f"training_data_DQN_seed_{self.seed}.csv", index=False)
 

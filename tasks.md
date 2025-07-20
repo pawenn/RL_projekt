@@ -1,20 +1,24 @@
+- TODO:
+    - eval? 
+        - Last 10 training episodes. 
+
 - per agent: 
     - init()
     - predict_action()
     - update_agent()
 
 - 3 subclasses of dqn_agent
-    - raw-image agent (maybe?)
-        - encoder as simple cnn
-    - agent with AE and reconstruction
-        - encoder + decoder + recon-loss
-    - agent with AE and forward prediction
+    - raw-image agent (maybe?)                          Jakob
+        - encoder as simple cnn                 
+    - agent with AE and reconstruction                  Paul
+        - encoder + decoder + recon-loss        
+    - agent with AE and forward prediction              Jakob
         - encoder + forward-model + pred-loss
 
-- L2 regularization and z-weight decay (for both AEs?)
+- L2 regularization and z-weight decay (for both AEs?)  Paul
 
 - (polyak-averaging?)
-    - updating encoders and Q-heads at different rates
+    - updating encoders and Q-heads at different rates  later
 
 
 

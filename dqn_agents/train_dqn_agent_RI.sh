@@ -1,1 +1,1 @@
-python -m dqn_agents.dqn_agent
+python -m dqn_agents.dqn_agent_RI

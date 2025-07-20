@@ -15,9 +15,12 @@ agent:
   epsilon_final: 0.01
   epsilon_decay: 500
   target_update_freq: 1000
+  feature_dim: 50
+  num_conv_layers: 4
+  num_conv_filters: 32
   decoder_latent_lambda: 1e-6 
   decoder_update_freq: 1
 
 train:
-  num_frames: 500000
-  eval_interval: 1000
+  num_frames: 100000
+  eval_interval: 5000
