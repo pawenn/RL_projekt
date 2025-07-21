@@ -8,6 +8,7 @@
     - forward prediction:
         - keep L2 regularization?
         - detach z_next?
+        - add norm + tanh to forward-model?
 
 - per agent: 
     - init()
