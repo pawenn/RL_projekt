@@ -12,7 +12,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from omegaconf import DictConfig
-from .abstract_agent import AbstractAgent
+try:
+    from .abstract_agent import AbstractAgent
+except Exception:
+    from abstract_agent import AbstractAgent
 from buffer.buffers import ReplayBuffer
 from networks.q_network import QNetwork
 from utils.frame_stack_wrapper import FrameStack
@@ -116,11 +119,11 @@ class DQNAgent(AbstractAgent):
 
         # Dimension values for Q-Networks
         self.feature_dim = feature_dim if feature_dim is not None else env.observation_space.shape[0]
-        n_actions = env.action_space.n
+        self.action_dim = env.action_space.n
 
         # main Q‐network and frozen target
-        self.q = QNetwork(self.feature_dim, n_actions).to(self.device)
-        self.target_q = QNetwork(self.feature_dim, n_actions).to(self.device)
+        self.q = QNetwork(self.feature_dim, self.action_dim).to(self.device)
+        self.target_q = QNetwork(self.feature_dim, self.action_dim).to(self.device)
         self.target_q.load_state_dict(self.q.state_dict())
 
         self.optimizer = optim.Adam(self.q.parameters(), lr=lr)
@@ -278,7 +281,7 @@ class DQNAgent(AbstractAgent):
         return float(loss.item())
     
 
-    def evaluate_policy(self, num_episodes: int = 5) -> float:
+    def evaluate_policy(self, eval_env: gym.Env, num_episodes: int = 5) -> float:
         """
         Runs the policy without exploration to evaluate its performance.
 
@@ -293,9 +296,6 @@ class DQNAgent(AbstractAgent):
             Average total reward per episode.
         """
       
-
-        eval_env = gym.make(self.env.unwrapped.spec.id,  continuous=False)
-        eval_env = FrameStack(eval_env, k=3)
         total_reward = 0.0
         episode_steps = 0
         for _ in range(num_episodes):
@@ -328,6 +328,8 @@ class DQNAgent(AbstractAgent):
             Every this many episodes, print average reward.
         """
         state, _ = self.env.reset()
+        eval_env = gym.make(self.env.unwrapped.spec.id,  continuous=False)
+        eval_env = FrameStack(eval_env, k=3)
         ep_reward = 0.0
         recent_rewards: List[float] = []
         episode_rewards = []
@@ -355,11 +357,11 @@ class DQNAgent(AbstractAgent):
 
             if done or truncated:
                 video_filename = f"episode_{len(episode_rewards)}.mp4"
-                self.video.save(video_filename)
+                if self.record_video:
+                    self.video.save(video_filename)
+                    self.video.init(enabled=True)
                 
                 state, _ = self.env.reset()
-                if self.record_video:
-                    self.video.init(enabled=True)
 
                 recent_rewards.append(ep_reward)
                 episode_rewards.append(ep_reward)
@@ -380,7 +382,7 @@ class DQNAgent(AbstractAgent):
 
             # Evaluation
             if frame % eval_interval == 0:
-                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(num_episodes=5)
+                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(eval_env, num_episodes=5)
                 print(f"[EVAL] Frame {frame}: Average Eval Reward over 5 episodes: {avg_eval_reward:.2f}, Average episode length: {avg_eval_episode_length:.2f}")
                 log_data[-1]["avg_eval_reward"] = round(avg_eval_reward, 2)
                 log_data[-1]["avg_eval_episode_length"] = avg_eval_episode_length

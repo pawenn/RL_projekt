@@ -8,7 +8,10 @@ import gymnasium as gym
 import hydra
 from omegaconf import DictConfig
 
-from .dqn_agent import DQNAgent, set_seed
+try:
+    from .dqn_agent import DQNAgent, set_seed
+except Exception:
+    from dqn_agent import DQNAgent, set_seed
 from networks.encoder import make_encoder, PixelEncoder
 from utils.frame_stack_wrapper import FrameStack
 
@@ -159,6 +162,7 @@ def main(cfg: DictConfig):
         epsilon_decay=cfg.agent.epsilon_decay,
         target_update_freq=cfg.agent.target_update_freq,
         feature_dim=cfg.agent.feature_dim,
+        record_video=cfg.train.record_video,
         device=device,
         seed=seed,
     )

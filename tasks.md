@@ -1,6 +1,13 @@
 - TODO:
     - eval? 
         - Last 10 training episodes. 
+    - logging:
+        - all losses?
+    - update_agent:
+        - combine losses in single method?
+    - forward prediction:
+        - keep L2 regularization?
+        - detach z_next?
 
 - per agent: 
     - init()
