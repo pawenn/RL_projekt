@@ -1,9 +1,11 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
 from typing import Any, Dict, List, Tuple
 import time
+import random
 import gymnasium as gym
 import hydra
 import numpy as np
@@ -33,14 +35,22 @@ def set_seed(env: gym.Env, seed: int = 0) -> None:
     seed : int
         Random seed.
     """
+    random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
     env.reset(seed=seed)
+
     # some spaces also support .seed()
     if hasattr(env.action_space, "seed"):
         env.action_space.seed(seed)
     if hasattr(env.observation_space, "seed"):
         env.observation_space.seed(seed)
+
+    torch.use_deterministic_algorithms(True)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 class DQNAgent(AbstractAgent):
@@ -330,6 +340,8 @@ class DQNAgent(AbstractAgent):
         state, _ = self.env.reset()
         eval_env = gym.make(self.env.unwrapped.spec.id,  continuous=False)
         eval_env = FrameStack(eval_env, k=3)
+        set_seed(eval_env, self.seed)
+
         ep_reward = 0.0
         recent_rewards: List[float] = []
         episode_rewards = []
