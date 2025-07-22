@@ -23,6 +23,8 @@
         - detach z_next?
         - add norm + tanh to forward-model?
 
+    - update requirements.txt
+
 
 - (polyak-averaging?)
     - updating encoders and Q-heads at different rates  later
