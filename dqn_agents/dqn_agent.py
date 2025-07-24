@@ -1,5 +1,7 @@
 import sys
 import os
+
+from utils.frame_skipper_wrapper import SkipFrame
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
@@ -77,7 +79,8 @@ class DQNAgent(AbstractAgent):
         seed: int = 0,
         feature_dim: int | None = None,
         device = torch.device('cpu'),
-        record_video: bool = False
+        record_video: bool = False,
+        skip_frames: int = 4,
     ) -> None:
         """
         Initialize replay buffer, Q‐networks, optimizer, and hyperparameters.
@@ -149,6 +152,7 @@ class DQNAgent(AbstractAgent):
         self.target_update_freq = target_update_freq
 
         self.total_steps = 0  # for ε decay and target sync
+        self.skip_frames = skip_frames
 
         #video recorder
         self.record_video = record_video
@@ -326,7 +330,7 @@ class DQNAgent(AbstractAgent):
         return avg_reward, avg_episode_length
 
 
-    def train(self, num_frames: int, eval_interval: int = 1000) -> None:
+    def train(self, time_steps: int, eval_interval: int = 1000) -> None:
         """
         Run a training loop for a fixed number of frames.
 
@@ -339,12 +343,14 @@ class DQNAgent(AbstractAgent):
         """
         state, _ = self.env.reset()
         eval_env = gym.make(self.env.unwrapped.spec.id,  continuous=False)
+        eval_env = SkipFrame(eval_env, skip=self.skip_frames)
         eval_env = FrameStack(eval_env, k=3)
         set_seed(eval_env, self.seed)
 
         ep_reward = 0.0
         recent_rewards: List[float] = []
         episode_rewards = []
+        td_noise_episode = []
         steps = []
         log_data = []
         start = time.time()
@@ -352,7 +358,7 @@ class DQNAgent(AbstractAgent):
         if self.record_video:
             self.video.init(enabled=True)
 
-        for frame in range(1, num_frames + 1):
+        for time_step in range(1, time_steps + 1):
             action = self.predict_action(state)
             next_state, reward, done, truncated, _ = self.env.step(action)
             if self.record_video:
@@ -365,7 +371,12 @@ class DQNAgent(AbstractAgent):
             # update if ready
             if len(self.buffer) >= self.batch_size:
                 batch = self.buffer.sample(self.batch_size)
-                loss = self.update_agent(batch)
+                loss, pred, target = self.update_agent(batch)
+
+                # calculate TD noise as standard deviation per batch and average over episode
+                td_errors = pred.detach().cpu().numpy() - target.detach().cpu().numpy()
+                td_noise = float(np.std(td_errors))
+                td_noise_episode.append(td_noise)
 
             if done or truncated:
                 video_filename = f"episode_{len(episode_rewards)}.mp4"
@@ -377,10 +388,12 @@ class DQNAgent(AbstractAgent):
 
                 recent_rewards.append(ep_reward)
                 episode_rewards.append(ep_reward)
-                steps.append(frame)
+                steps.append(time_step)
                 ep_reward = 0.0
                 now = time.time()
-                print(f"Frame {frame}, Episode: {len(episode_rewards)}, Reward: {episode_rewards[-1]}; Time ={now - start}")
+                frame = time_step * self.skip_frames
+                avg_td_noise = np.mean(td_noise_episode) if td_noise_episode else None
+                print(f"Time step: {time_step} Frame {frame}, Episode: {len(episode_rewards)}, Reward: {episode_rewards[-1]}; Average TD Noise: {avg_td_noise}; Time ={now - start}")
                 log_entry = {
                     "frame": frame,
                     "episode": len(episode_rewards),
@@ -388,23 +401,21 @@ class DQNAgent(AbstractAgent):
                     "epsilon": self.epsilon(),
                     "time": now - start,
                     "avg_eval_reward": None,
-                    "avg_eval_episode_length": None
+                    "avg_eval_episode_length": None,
+                    "avg_td_noise": avg_td_noise,
                 }
                 log_data.append(log_entry)
 
             # Evaluation
-            if frame % eval_interval == 0:
+            if time_step % eval_interval == 0:
                 avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(eval_env, num_episodes=5)
-                print(f"[EVAL] Frame {frame}: Average Eval Reward over 5 episodes: {avg_eval_reward:.2f}, Average episode length: {avg_eval_episode_length:.2f}")
+                print(f"[EVAL] Timestep {time_step} Frame: {frame} Average Eval Reward over 5 episodes: {avg_eval_reward:.2f}, Average episode length: {avg_eval_episode_length:.2f}")
                 log_data[-1]["avg_eval_reward"] = round(avg_eval_reward, 2)
                 log_data[-1]["avg_eval_episode_length"] = avg_eval_episode_length
 
         print("Training complete.")
         avg = np.mean(recent_rewards[-10:])
         now = time.time()
-        print(
-            f"DONE: Frame {frame}, AvgReward(10): {avg:.2f}, ε={self.epsilon():.3f}; Time ={now - start}"
-        )
         df = pd.DataFrame(log_data)
         df.to_csv("training_and_eval_log.csv", index=False, sep=";")
         print("Saved training_and_eval_log.csv")

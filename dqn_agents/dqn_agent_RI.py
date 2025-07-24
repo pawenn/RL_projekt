@@ -8,6 +8,8 @@ import gymnasium as gym
 import hydra
 from omegaconf import DictConfig
 
+from utils.frame_skipper_wrapper import SkipFrame
+
 try:
     from .dqn_agent import DQNAgent, set_seed
 except Exception:
@@ -103,6 +105,8 @@ class DQNAgentRI(DQNAgent):
         -------
         loss_val : float
             MSE loss value.
+        pred : torch.Tensor
+        target : torch.Tensor
         """
         # unpack
         states, actions, rewards, next_states, dones, _ = zip(*training_batch)
@@ -137,7 +141,7 @@ class DQNAgentRI(DQNAgent):
             self.target_cnn.load_state_dict(self.cnn.state_dict())
 
         self.total_steps += 1
-        return float(loss.item())
+        return float(loss.item()), pred, target
 
 
 @hydra.main(config_path="../configs/", config_name="dqn_agent_RI", version_base="1.1")
@@ -145,6 +149,7 @@ def main(cfg: DictConfig):
     
     # 1) build env
     env = gym.make(cfg.env.name,  continuous=False)
+    env = SkipFrame(env, skip=cfg.env.skip_frames)
     env = FrameStack(env, k=cfg.env.frame_stack)
     seed = cfg.seed
     set_seed(env, seed)
@@ -164,6 +169,7 @@ def main(cfg: DictConfig):
         feature_dim=cfg.agent.feature_dim,
         record_video=cfg.train.record_video,
         device=device,
+        skip_frames=cfg.env.skip_frames,
         seed=seed,
     )
 
@@ -173,7 +179,7 @@ def main(cfg: DictConfig):
         num_conv_filters=cfg.agent.num_conv_filters,
         **agent_kwargs
     )
-    agent.train(cfg.train.num_frames, cfg.train.eval_interval)
+    agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
 
 
 if __name__ == "__main__":

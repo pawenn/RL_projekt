@@ -140,7 +140,7 @@ class DQNAgentAEForward(DQNAgent):
             self.update_forward_model(s, a, s_next)
 
         self.total_steps += 1
-        return float(loss.item())
+        return float(loss.item()), pred, target
     
 
     def update_forward_model(self, s, a, s_next):

@@ -122,7 +122,7 @@ class DQNAgentAErecon(DQNAgent):
         #if self.decoder is not None and step % self.decoder_update_freq == 0:
 
         self.update_decoder_with_recon_loss(s)
-        return float(loss.item())
+        return float(loss.item()), pred, target
     
     def update_decoder_with_recon_loss(self, obs):
         self.encoder_optimizer.zero_grad()
