@@ -5,6 +5,7 @@ device: "cuda"
 env:
   name: "CarRacing-v3"
   frame_stack: 3
+  skip_frames: 4
 
 agent:
   buffer_capacity: 10000
@@ -22,6 +23,8 @@ agent:
   decoder_update_freq: 1
 
 train:
-  num_frames: 100000
-  eval_interval: 5000
-  record_video: true
+  num_train_steps: 25000
+  eval_interval: 2500
+  # num_frames: 100000
+  # eval_interval: 5000
+  record_video: false

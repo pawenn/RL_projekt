@@ -1,7 +1,6 @@
 import sys
 import os
 
-from utils.frame_skipper_wrapper import SkipFrame
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
@@ -16,12 +15,15 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from omegaconf import DictConfig
+
 try:
     from .abstract_agent import AbstractAgent
 except Exception:
     from abstract_agent import AbstractAgent
+
 from buffer.buffers import ReplayBuffer
 from networks.q_network import QNetwork
+from utils.frame_skipper_wrapper import SkipFrame
 from utils.frame_stack_wrapper import FrameStack
 from video.video_recorder import VideoRecorder
 

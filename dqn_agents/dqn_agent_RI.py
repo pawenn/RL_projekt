@@ -8,13 +8,13 @@ import gymnasium as gym
 import hydra
 from omegaconf import DictConfig
 
-from utils.frame_skipper_wrapper import SkipFrame
-
 try:
     from .dqn_agent import DQNAgent, set_seed
 except Exception:
     from dqn_agent import DQNAgent, set_seed
+    
 from networks.encoder import make_encoder, PixelEncoder
+from utils.frame_skipper_wrapper import SkipFrame
 from utils.frame_stack_wrapper import FrameStack
 
 

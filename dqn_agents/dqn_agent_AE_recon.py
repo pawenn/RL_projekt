@@ -2,17 +2,22 @@ from typing import Any, Dict, Tuple
 import hydra
 from omegaconf import DictConfig
 
-from networks.encoder import PixelEncoder, make_encoder
-from utils.frame_stack_wrapper import FrameStack
-from .dqn_agent import DQNAgent
-from networks.decoder import make_decoder
-import torch.nn.functional as F
-import torch
 import numpy as np
-from . dqn_agent import set_seed
 import gymnasium as gym
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
+
+try:
+    from .dqn_agent import DQNAgent, set_seed
+except Exception:
+    from dqn_agent import DQNAgent, set_seed
+
+from networks.encoder import make_encoder, PixelEncoder
+from networks.decoder import make_decoder
+from utils.frame_skipper_wrapper import SkipFrame
+from utils.frame_stack_wrapper import FrameStack
 
 class DQNAgentAErecon(DQNAgent):
 
@@ -156,6 +161,7 @@ def main(cfg: DictConfig):
     
     # 1) build env
     env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
+    env = SkipFrame(env, skip=cfg.env.skip_frames)
     env = FrameStack(env, k=3)
     # env = gym.make(cfg.env.name, render_mode="human")
     seed=1234
@@ -173,6 +179,7 @@ def main(cfg: DictConfig):
         epsilon_final=cfg.agent.epsilon_final,
         epsilon_decay=cfg.agent.epsilon_decay,
         target_update_freq=cfg.agent.target_update_freq,
+        skip_frames=cfg.env.skip_frames,
         seed=seed,
         device=device,
         feature_dim=cfg.agent.feature_dim,
@@ -185,7 +192,7 @@ def main(cfg: DictConfig):
         decoder_update_freq=cfg.agent.decoder_update_freq,
         **agent_kwargs
     )
-    agent.train(cfg.train.num_frames, cfg.train.eval_interval)
+    agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
 
 
 if __name__ == "__main__":

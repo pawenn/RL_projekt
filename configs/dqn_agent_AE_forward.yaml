@@ -5,6 +5,7 @@ device: "cuda"
 env:
   name: "CarRacing-v3"
   frame_stack: 3
+  skip_frames: 4
 
 agent:
   buffer_capacity: 10000
@@ -18,10 +19,12 @@ agent:
   feature_dim: 50
   num_conv_layers: 4
   num_conv_filters: 32
-  forward_model_update_freq: 5
+  forward_model_update_freq: 1
   forward_latent_lambda: 1e-6
 
 train:
-  num_frames: 100000
-  eval_interval: 10000
+  num_train_steps: 25000
+  eval_interval: 2500
+  # num_frames: 100000
+  # eval_interval: 10000
   record_video: false

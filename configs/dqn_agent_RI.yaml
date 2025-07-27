@@ -21,6 +21,8 @@ agent:
   num_conv_filters: 32
 
 train:
-  num_train_steps: 40000
-  eval_interval: 5000
+  num_train_steps: 25000
+  eval_interval: 2500
+  # num_train_steps: 40000
+  # eval_interval: 5000
   record_video: false

@@ -13,8 +13,10 @@ try:
     from .dqn_agent import DQNAgent, set_seed
 except Exception:
     from dqn_agent import DQNAgent, set_seed
+
 from networks.encoder import make_encoder, PixelEncoder
 from networks.forward_model import ForwardModel
+from utils.frame_skipper_wrapper import SkipFrame
 from utils.frame_stack_wrapper import FrameStack
 
 
@@ -168,6 +170,7 @@ def main(cfg: DictConfig):
     
     # 1) build env
     env = gym.make(cfg.env.name,  continuous=False)
+    env = SkipFrame(env, skip=cfg.env.skip_frames)
     env = FrameStack(env, k=cfg.env.frame_stack)
     seed = cfg.seed
     set_seed(env, seed)
@@ -187,6 +190,7 @@ def main(cfg: DictConfig):
         feature_dim=cfg.agent.feature_dim,
         record_video=cfg.train.record_video,
         device=device,
+        skip_frames=cfg.env.skip_frames,
         seed=seed,
     )
 
@@ -198,7 +202,7 @@ def main(cfg: DictConfig):
         forward_latent_lambda=cfg.agent.forward_latent_lambda,
         **agent_kwargs
     )
-    agent.train(cfg.train.num_frames, cfg.train.eval_interval)
+    agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
 
 
 if __name__ == "__main__":
