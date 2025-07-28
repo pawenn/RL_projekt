@@ -1,47 +1,24 @@
 - TODO:
 
-    - save agent after training
+    - save agent after training                     Jakob
         - override save/load methods in agents
-    - two encoder-optimizers in recon-agent?
-    - FrameSkip only for terminated, but not truncated?
+    - two encoder-optimizers in recon-agent?                Paul
+    - FrameSkip only for terminated, but not truncated?     Paul
         - also 1 time-step can be less than 4 env-steps
-    - logging per episode or step?
+    - logging per episode or step?                          Paul
         - currently: TD-noise = avg of all td_noise_episode (including prior episodes)
         - maybe:
-            - csv-train per time-step:
+            - csv-train per train-step (~ 4 * env-frame):
                 - Time-step; Frame; Episode; Reward; Loss; Aux-Loss; TD_mean; TD_std; TD_max; TD_min; Time
+            - csv-train per train-episode:
+                - Time-step; Frame; Episode; Ep-Reward; Time
             - csv-eval per eval-interval:
-                - Time-step; Frame; Eval-Episode; Avg-Reward; Avg-Episode-Length
-    - requirements.txt
-    - seeds for experiments
+                - Time-step; Frame; Eval-Episode; Eval-Reward (per current eval-epsiode); Avg-Episode-Length
+    - requirements.txt          Jakob
+    - seeds for experiments     Jakob
 
+    - script for visualization
 
-
-    - seed !!!              Jakob
-
-    - logging:              Paul
-        - add these to second csv-file
-            - TD-error:
-                - in update-agent()
-                    - compute TD-error -> log mean, std, max, min (maybe in dict?)
-                        - how to other people to this / how do they measure TD-noise (loss)?
-            - add loss
-                add aux-loss
-        - to first csv-file add:
-            - avg reward of last 10 episodes
-
-    - frame-skip:               Paul
-        - Wrapper before FrameStack-Wrapper?
-
-    - CNN-layers:           Paul
-        - reduce num-layers? 
-
-    - forward prediction:       Jakob
-        - keep L2 regularization?
-        - detach z_next?
-        - add norm + tanh to forward-model?
-
-    - update requirements.txt
 
 
 - (polyak-averaging?)
