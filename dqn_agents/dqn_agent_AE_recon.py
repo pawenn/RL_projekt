@@ -159,40 +159,41 @@ class DQNAgentAErecon(DQNAgent):
 @hydra.main(config_path="../configs/", config_name="dqn_agent_AE_recon", version_base="1.1")
 def main(cfg: DictConfig):
     
-    # 1) build env
-    env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
-    env = SkipFrame(env, skip=cfg.env.skip_frames)
-    env = FrameStack(env, k=3)
-    # env = gym.make(cfg.env.name, render_mode="human")
-    seed=1234
-    set_seed(env, seed)
+    for seed in cfg.seeds:
+        # 1) build env
+        # env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
+        env = gym.make(cfg.env.name,  continuous=False)
+        env = SkipFrame(env, skip=cfg.env.skip_frames)
+        env = FrameStack(env, k=3)
+        set_seed(env, seed)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # 2) map config → agent kwargs
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    agent_kwargs = dict(
-        env=env,
-        buffer_capacity=cfg.agent.buffer_capacity,
-        batch_size=cfg.agent.batch_size,
-        lr=cfg.agent.lr,
-        gamma=cfg.agent.gamma,
-        epsilon_start=cfg.agent.epsilon_start,
-        epsilon_final=cfg.agent.epsilon_final,
-        epsilon_decay=cfg.agent.epsilon_decay,
-        target_update_freq=cfg.agent.target_update_freq,
-        skip_frames=cfg.env.skip_frames,
-        seed=seed,
-        device=device,
-        feature_dim=cfg.agent.feature_dim,
-        record_video=cfg.train.record_video
-    )
+        # 2) map config → agent kwargs
+        agent_kwargs = dict(
+            env=env,
+            buffer_capacity=cfg.agent.buffer_capacity,
+            batch_size=cfg.agent.batch_size,
+            lr=cfg.agent.lr,
+            gamma=cfg.agent.gamma,
+            epsilon_start=cfg.agent.epsilon_start,
+            epsilon_final=cfg.agent.epsilon_final,
+            epsilon_decay=cfg.agent.epsilon_decay,
+            target_update_freq=cfg.agent.target_update_freq,
+            skip_frames=cfg.env.skip_frames,
+            seed=seed,
+            device=device,
+            feature_dim=cfg.agent.feature_dim,
+            record_video=cfg.train.record_video
+        )
 
-    # 3) instantiate & train
-    agent = DQNAgentAErecon(
-        decoder_latent_lambda=cfg.agent.decoder_latent_lambda,
-        decoder_update_freq=cfg.agent.decoder_update_freq,
-        **agent_kwargs
-    )
-    agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
+        # 3) instantiate & train
+        agent = DQNAgentAErecon(
+            decoder_latent_lambda=cfg.agent.decoder_latent_lambda,
+            decoder_update_freq=cfg.agent.decoder_update_freq,
+            **agent_kwargs
+        )
+        agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
+        env.close()
 
 
 if __name__ == "__main__":

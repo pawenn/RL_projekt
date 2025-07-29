@@ -226,13 +226,15 @@ class DQNAgent(AbstractAgent):
         path : str
             File path.
         """
-        torch.save(
-            {
-                "parameters": self.q.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
-            },
-            path,
-        )
+        to_save = {}
+
+        for name, value in vars(self).items():
+            if isinstance(value, torch.nn.Module):
+                to_save[f"{name}_state_dict"] = value.state_dict()
+            elif isinstance(value, torch.optim.Optimizer):
+                to_save[f"{name}_optimizer_state_dict"] = value.state_dict()
+
+        torch.save(to_save, path)
 
 
     def load(self, path: str) -> None:
@@ -244,9 +246,18 @@ class DQNAgent(AbstractAgent):
         path : str
             File path.
         """
-        checkpoint = torch.load(path)
-        self.q.load_state_dict(checkpoint["parameters"])
-        self.optimizer.load_state_dict(checkpoint["optimizer"])
+        checkpoint = torch.load(path, map_location=self.device)
+
+        for name, value in vars(self).items():
+            if isinstance(value, torch.nn.Module):
+                key = f"{name}_state_dict"
+                if key in checkpoint:
+                    value.load_state_dict(checkpoint[key])
+            elif isinstance(value, torch.optim.Optimizer):
+                key = f"{name}_optimizer_state_dict"
+                if key in checkpoint:
+                    value.load_state_dict(checkpoint[key])
+
 
 
     def update_agent(
@@ -419,7 +430,8 @@ class DQNAgent(AbstractAgent):
         avg = np.mean(recent_rewards[-10:])
         now = time.time()
         df = pd.DataFrame(log_data)
-        df.to_csv("training_and_eval_log.csv", index=False, sep=";")
+        df.to_csv(f"{self.__class__.__name__}_training_and_eval_log_seed_{self.seed}.csv", index=False, sep=";")
+        self.save(f"{self.__class__.__name__}_model_seed_{self.seed}.pt")
         print("Saved training_and_eval_log.csv")
         
 

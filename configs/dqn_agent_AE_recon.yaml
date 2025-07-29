@@ -1,4 +1,5 @@
 seed: 1234
+seeds: [7668, 6094, 6720, 4685, 5577, 1035, 5224, 6389, 9873, 1996]
 
 device: "cuda" 
 
@@ -24,7 +25,5 @@ agent:
 
 train:
   num_train_steps: 25000
-  eval_interval: 2500
-  # num_frames: 100000
-  # eval_interval: 5000
+  eval_interval: 1250
   record_video: false
