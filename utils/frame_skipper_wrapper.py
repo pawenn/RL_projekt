@@ -12,6 +12,8 @@ class SkipFrame(gym.Wrapper):
             state, reward, terminated, truncated, info = self.env.step(action)
             self.frames += 1
             total_reward += reward
-            if terminated:
+            if terminated or truncated:
                 break
         return state, total_reward, terminated, truncated, info, self.frames
+    
+ 

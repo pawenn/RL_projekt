@@ -83,6 +83,7 @@ class DQNAgent(AbstractAgent):
         device = torch.device('cpu'),
         record_video: bool = False,
         skip_frames: int = 4,
+        eval_episodes: int = 5
     ) -> None:
         """
         Initialize replay buffer, Q‐networks, optimizer, and hyperparameters.
@@ -125,6 +126,7 @@ class DQNAgent(AbstractAgent):
             epsilon_decay,
             target_update_freq,
             seed,
+            eval_episodes,
         )
         self.env = env
         self.seed = seed
@@ -155,6 +157,7 @@ class DQNAgent(AbstractAgent):
 
         self.total_steps = 0  # for ε decay and target sync
         self.skip_frames = skip_frames
+        self.eval_episodes = eval_episodes
 
         #video recorder
         self.record_video = record_video
@@ -308,7 +311,7 @@ class DQNAgent(AbstractAgent):
         return float(loss.item())
     
 
-    def evaluate_policy(self, eval_env: gym.Env, num_episodes: int = 5) -> float:
+    def evaluate_policy(self, eval_env: gym.Env) -> float:
         """
         Runs the policy without exploration to evaluate its performance.
 
@@ -323,28 +326,31 @@ class DQNAgent(AbstractAgent):
             Average total reward per episode.
         """
       
+      
         total_reward = 0.0
-        episode_steps = 0
         episode_num = 0
-        for _ in range(num_episodes):
+        for _ in range(self.eval_episodes):
             state, _ = eval_env.reset()
             done = False
             episode_reward = 0.0
-        
+            episode_steps = 0
+
             while not done:
                 action = self.predict_action(state, evaluate=True)
                 state, reward, terminated, truncated, _, frames = eval_env.step(action)
                 done = terminated or truncated
                 episode_reward += reward
-                """ self.log_eval(
-                    episode_steps, episode_steps * self.skip_frames, episode_num, episode_reward, episode_steps
-                ) """
+                episode_steps += 1
                 episode_num += 1
-            episode_steps += 1
+
+            self.log_eval(
+                    episode_steps, frames, episode_num, episode_reward,
+                )
+            
             total_reward += episode_reward
 
-        avg_reward = total_reward / num_episodes
-        avg_episode_length = episode_steps / num_episodes
+        avg_reward = total_reward / self.eval_episodes
+        avg_episode_length = episode_steps / self.eval_episodes
         return avg_reward, avg_episode_length
 
 
@@ -369,7 +375,6 @@ class DQNAgent(AbstractAgent):
         episode_rewards = []
         td_noise_episode = []
         steps = []
-        log_data = []
         start = time.time()
 
         if self.record_video:
@@ -409,18 +414,17 @@ class DQNAgent(AbstractAgent):
                 
                 now = time.time()
                 avg_td_noise = np.mean(td_noise_episode) if td_noise_episode else None
-                self.log_episode(time_step, frames, len(episode_rewards), episode_rewards[-1], self.epsilon(), avg_td_noise, now - start, print_result=True)
+                self.print_episode_information(time_step, frames, len(episode_rewards), episode_rewards[-1], self.epsilon(), avg_td_noise, now - start)
                 td_noise_episode = []
                 ep_reward = 0.0
                 
-
             # Evaluation
             if time_step % eval_interval == 0:
-                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(eval_env, num_episodes=5)
+                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(eval_env)
                 
         print("Training complete.")
         self.save(f"{self.__class__.__name__}_model_seed_{self.seed}.pt")
-        print("Saved training_and_eval_log.csv")
+       
     
     def log_step(self, timestep: int, frame: int, episode: int, reward: float, loss: float, aux_loss: float, td_errors: np.ndarray, elapsed_time: float, print_result: bool = False) -> None:
         td_mean = float(np.mean(td_errors))
@@ -429,8 +433,8 @@ class DQNAgent(AbstractAgent):
         td_min = float(np.min(td_errors))
 
         row = f"{timestep};{frame};{episode};{reward:.4f};{loss:.4f};{aux_loss:.4f};{td_mean:.4f};{td_std:.4f};{td_max:.4f};{td_min:.4f};{elapsed_time:.2f}"
-        
-        with open("csv-train.csv", "a") as f:
+
+        with open(f"{self.__class__.__name__}_training_log_seed{self.seed}.csv", "a") as f:
             if f.tell() == 0:
                 f.write("Timestep;Frame;Episode;Reward;Loss;Aux-Loss;TD_mean;TD_std;TD_max;TD_min;Time\n")
             f.write(row + "\n")
@@ -443,24 +447,16 @@ class DQNAgent(AbstractAgent):
                 f"TD_min: {td_min:.4f} | Time: {elapsed_time:.2f}s"
             )
     
-    def log_episode(self, timestep: int, frame: int, episode: int, reward: float, epsilon: float, avg_td_noise: float, elapsed_time: float, print_result: bool = False) -> None:
-        row = f"{frame};{episode};{reward:.4f};{epsilon:.4f};{avg_td_noise:.4f};{elapsed_time:.2f}"
-
-        with open("csv-episode.csv", "a") as f:
-            if f.tell() == 0:
-                f.write("Frame;Episode;Reward;Epsilon;Avg_TD_Noise;Time\n")
-            f.write(row + "\n")
-
-        if print_result:
-            print(
-                f"[EPISODE LOG] Timestep: {timestep} | Frame: {frame} | Episode: {episode} | Reward: {reward:.4f} | "
-                f"Epsilon: {epsilon:.4f} | Time: {elapsed_time:.2f}s"
-            )
+    def print_episode_information(self, timestep: int, frame: int, episode: int, reward: float, epsilon: float, avg_td_noise: float, elapsed_time: float) -> None:
+        print(
+            f"[EPISODE LOG] Timestep: {timestep} | Frame: {frame} | Episode: {episode} | Reward: {reward:.4f} | "
+            f"Epsilon: {epsilon:.4f} | Time: {elapsed_time:.2f}s"
+        )
     
     def log_eval(self, timestep: int, frame: int, eval_episode: int, avg_reward: float, avg_length: float, print_result: bool = False) -> None:
         row = f"{timestep};{frame};{eval_episode};{avg_reward:.2f};{avg_length:.2f}"
 
-        with open("csv-eval.csv", "a") as f:
+        with open(f"{self.__class__.__name__}_eval_log_seed{self.seed}.csv", "a") as f:
             if f.tell() == 0:
                 f.write("Timestep;Frame;Eval-Episode;Avg-Reward;Avg-Episode-Length\n")
             f.write(row + "\n")

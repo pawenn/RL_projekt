@@ -160,14 +160,8 @@ class DQNAgentAErecon(DQNAgent):
 
 def main(cfg: DictConfig):
 
-
-
-
     for seed in cfg.seeds:
-
-
         # 1) build env
-
         # env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
 
         env = gym.make(cfg.env.name,  continuous=False)
@@ -192,7 +186,8 @@ def main(cfg: DictConfig):
             seed=seed,
             device=device,
             feature_dim=cfg.agent.feature_dim,
-            record_video=cfg.train.record_video
+            record_video=cfg.train.record_video,
+            eval_episodes=cfg.train.eval_episodes
         )
 
 

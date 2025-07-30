@@ -25,3 +25,4 @@ train:
   num_train_steps: 25000
   eval_interval: 1250
   record_video: false
+  eval_episodes: 5

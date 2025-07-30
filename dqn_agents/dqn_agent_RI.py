@@ -171,6 +171,7 @@ def main(cfg: DictConfig):
             device=device,
             skip_frames=cfg.env.skip_frames,
             seed=seed,
+            eval_episodes=cfg.train.eval_episodes
         )
 
         # 3) instantiate & train
