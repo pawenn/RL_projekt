@@ -26,4 +26,4 @@ agent:
 train:
   num_train_steps: 25000
   eval_interval: 1250
-  record_video: true
+  record_video: false

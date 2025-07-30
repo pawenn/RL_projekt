@@ -163,6 +163,8 @@ class DQNAgentAEForward(DQNAgent):
         self.encoder_optimizer.step()
         self.forward_optimizer.step()
 
+        return ae_loss.item()
+
 
 
 @hydra.main(config_path="../configs/", config_name="dqn_agent_AE_forward", version_base="1.1")
