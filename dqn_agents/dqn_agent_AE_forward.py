@@ -139,10 +139,10 @@ class DQNAgentAEForward(DQNAgent):
             self.target_encoder.load_state_dict(self.encoder.state_dict())
 
         if self.total_steps % self.forward_model_update_freq == 0:
-            self.update_forward_model(s, a, s_next)
+            aux_loss = self.update_forward_model(s, a, s_next)
 
         self.total_steps += 1
-        return float(loss.item()), pred, target
+        return float(loss.item()), aux_loss, pred, target
     
 
     def update_forward_model(self, s, a, s_next):

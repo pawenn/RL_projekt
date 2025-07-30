@@ -311,7 +311,7 @@ class DQNAgent(AbstractAgent):
         return float(loss.item())
     
 
-    def evaluate_policy(self, eval_env: gym.Env) -> float:
+    def evaluate_policy(self, eval_env: gym.Env, eval_interval_num: int) -> float:
         """
         Runs the policy without exploration to evaluate its performance.
 
@@ -341,10 +341,10 @@ class DQNAgent(AbstractAgent):
                 done = terminated or truncated
                 episode_reward += reward
                 episode_steps += 1
-                episode_num += 1
-
+            
+            episode_num += 1
             self.log_eval(
-                    episode_steps, frames, episode_num, episode_reward,
+                    episode_steps, frames, episode_num, episode_reward, eval_interval_num, print_result=True
                 )
             
             total_reward += episode_reward
@@ -376,6 +376,7 @@ class DQNAgent(AbstractAgent):
         td_noise_episode = []
         steps = []
         start = time.time()
+        eval_interval_num = 0
 
         if self.record_video:
             self.video.init(enabled=True)
@@ -420,30 +421,31 @@ class DQNAgent(AbstractAgent):
                 
             # Evaluation
             if time_step % eval_interval == 0:
-                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(eval_env)
+                avg_eval_reward, avg_eval_episode_length = self.evaluate_policy(eval_env, eval_interval_num)
+                eval_interval_num += 1
                 
         print("Training complete.")
         self.save(f"{self.__class__.__name__}_model_seed_{self.seed}.pt")
        
     
     def log_step(self, timestep: int, frame: int, episode: int, reward: float, loss: float, aux_loss: float, td_errors: np.ndarray, elapsed_time: float, print_result: bool = False) -> None:
-        td_mean = float(np.mean(td_errors))
+        td_mean_abs = float(np.mean(np.abs(td_errors)))
         td_std = float(np.std(td_errors))
         td_max = float(np.max(td_errors))
         td_min = float(np.min(td_errors))
 
-        row = f"{timestep};{frame};{episode};{reward:.4f};{loss:.4f};{aux_loss:.4f};{td_mean:.4f};{td_std:.4f};{td_max:.4f};{td_min:.4f};{elapsed_time:.2f}"
+        row = f"{timestep};{frame};{episode};{reward:.4f};{loss:.4f};{aux_loss:.4f};{td_mean_abs:.4f};{td_std:.4f};{td_max:.4f};{td_min:.4f};{elapsed_time:.2f}"
 
         with open(f"{self.__class__.__name__}_training_log_seed{self.seed}.csv", "a") as f:
             if f.tell() == 0:
-                f.write("Timestep;Frame;Episode;Reward;Loss;Aux-Loss;TD_mean;TD_std;TD_max;TD_min;Time\n")
+                f.write("Timestep;Frame;Episode;Reward;Loss;Aux-Loss;TD_mean_abs;TD_std;TD_max;TD_min;Time\n")
             f.write(row + "\n")
 
         if print_result:
             print(
                 f"[STEP LOG] Timestep: {timestep} | Frame: {frame} | Episode: {episode} | "
                 f"Reward: {reward:.4f} | Loss: {loss:.4f} | Aux-Loss: {aux_loss:.4f} | "
-                f"TD_mean: {td_mean:.4f} | TD_std: {td_std:.4f} | TD_max: {td_max:.4f} | "
+                f"TD_mean_abs: {td_mean_abs:.4f} | TD_std: {td_std:.4f} | TD_max: {td_max:.4f} | "
                 f"TD_min: {td_min:.4f} | Time: {elapsed_time:.2f}s"
             )
     
@@ -452,18 +454,17 @@ class DQNAgent(AbstractAgent):
             f"[EPISODE LOG] Timestep: {timestep} | Frame: {frame} | Episode: {episode} | Reward: {reward:.4f} | "
             f"Epsilon: {epsilon:.4f} | Time: {elapsed_time:.2f}s"
         )
-    
-    def log_eval(self, timestep: int, frame: int, eval_episode: int, avg_reward: float, avg_length: float, print_result: bool = False) -> None:
-        row = f"{timestep};{frame};{eval_episode};{avg_reward:.2f};{avg_length:.2f}"
+
+    def log_eval(self, timestep: int, frame: int, eval_episode: int, episode_reward: float, eval_interval_num: int, print_result: bool = False) -> None:
+        row = f"{timestep};{frame};{eval_episode};{episode_reward:.4f};{eval_interval_num}"
 
         with open(f"{self.__class__.__name__}_eval_log_seed{self.seed}.csv", "a") as f:
             if f.tell() == 0:
-                f.write("Timestep;Frame;Eval-Episode;Avg-Reward;Avg-Episode-Length\n")
+                f.write("Timestep;Frame;Eval-Episode;Episode-Reward;Eval-Interval\n")
             f.write(row + "\n")
 
         if print_result:
-            print("[EVAL LOG]", row)
-        
+            print(f"[EVAL LOG] Timestep: {timestep} | Frame: {frame} | Episode: {eval_episode} | Reward: {episode_reward:.4f} | Eval-Interval: {eval_interval_num}")
 
 
 @hydra.main(config_path="../configs/", config_name="dqn_agent", version_base="1.1")
