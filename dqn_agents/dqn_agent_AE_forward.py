@@ -163,7 +163,7 @@ class DQNAgentAEForward(DQNAgent):
         self.encoder_optimizer.step()
         self.forward_optimizer.step()
 
-        return ae_loss.item()
+        return float(ae_loss.item())
 
 
 
