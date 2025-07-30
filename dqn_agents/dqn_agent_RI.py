@@ -141,7 +141,7 @@ class DQNAgentRI(DQNAgent):
             self.target_cnn.load_state_dict(self.cnn.state_dict())
 
         self.total_steps += 1
-        return float(loss.item()), pred, target
+        return float(loss.item()), 0, pred, target, 100
 
 
 @hydra.main(config_path="../configs/", config_name="dqn_agent_RI", version_base="1.1")

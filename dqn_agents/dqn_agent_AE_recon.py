@@ -43,9 +43,7 @@ class DQNAgentAErecon(DQNAgent):
 
         self.decoder = make_decoder('pixel', obs_shape, self.feature_dim, num_conv_layers, num_conv_filters).to(self.device)
         self.decoder_optimizer = torch.optim.Adam(self.decoder.parameters(), lr=self.optimizer.param_groups[0]['lr'])
-        self.encoder_optimizer = torch.optim.Adam(
-                self.encoder.parameters(), lr=self.optimizer.param_groups[0]['lr']
-            )
+        
         
     def predict_action(
         self, state: np.ndarray, info: Dict[str, Any] = {}, evaluate: bool = False
@@ -126,8 +124,8 @@ class DQNAgentAErecon(DQNAgent):
 
         #if self.decoder is not None and step % self.decoder_update_freq == 0:
 
-        self.update_decoder_with_recon_loss(s)
-        return float(loss.item()), pred, target
+        aux_loss = self.update_decoder_with_recon_loss(s)
+        return float(loss.item()), aux_loss, pred, target
     
     def update_decoder_with_recon_loss(self, obs):
         self.encoder_optimizer.zero_grad()
@@ -146,6 +144,8 @@ class DQNAgentAErecon(DQNAgent):
         ae_loss.backward()
         self.encoder_optimizer.step()
         self.decoder_optimizer.step()
+
+        return float(ae_loss.item())
         
 
     def save(self, path: str) -> None:
@@ -159,41 +159,40 @@ class DQNAgentAErecon(DQNAgent):
 @hydra.main(config_path="../configs/", config_name="dqn_agent_AE_recon", version_base="1.1")
 def main(cfg: DictConfig):
     
-    for seed in cfg.seeds:
-        # 1) build env
-        # env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
-        env = gym.make(cfg.env.name,  continuous=False)
-        env = SkipFrame(env, skip=cfg.env.skip_frames)
-        env = FrameStack(env, k=3)
-        set_seed(env, seed)
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # 1) build env
+    env = gym.make(cfg.env.name,  continuous=False, render_mode="rgb_array")
+    env = SkipFrame(env, skip=cfg.env.skip_frames)
+    env = FrameStack(env, k=3)
+    # env = gym.make(cfg.env.name, render_mode="human")
+    seed=1234
+    set_seed(env, seed)
 
-        # 2) map config → agent kwargs
-        agent_kwargs = dict(
-            env=env,
-            buffer_capacity=cfg.agent.buffer_capacity,
-            batch_size=cfg.agent.batch_size,
-            lr=cfg.agent.lr,
-            gamma=cfg.agent.gamma,
-            epsilon_start=cfg.agent.epsilon_start,
-            epsilon_final=cfg.agent.epsilon_final,
-            epsilon_decay=cfg.agent.epsilon_decay,
-            target_update_freq=cfg.agent.target_update_freq,
-            skip_frames=cfg.env.skip_frames,
-            seed=seed,
-            device=device,
-            feature_dim=cfg.agent.feature_dim,
-            record_video=cfg.train.record_video
-        )
+    # 2) map config → agent kwargs
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    agent_kwargs = dict(
+        env=env,
+        buffer_capacity=cfg.agent.buffer_capacity,
+        batch_size=cfg.agent.batch_size,
+        lr=cfg.agent.lr,
+        gamma=cfg.agent.gamma,
+        epsilon_start=cfg.agent.epsilon_start,
+        epsilon_final=cfg.agent.epsilon_final,
+        epsilon_decay=cfg.agent.epsilon_decay,
+        target_update_freq=cfg.agent.target_update_freq,
+        skip_frames=cfg.env.skip_frames,
+        seed=seed,
+        device=device,
+        feature_dim=cfg.agent.feature_dim,
+        record_video=cfg.train.record_video
+    )
 
-        # 3) instantiate & train
-        agent = DQNAgentAErecon(
-            decoder_latent_lambda=cfg.agent.decoder_latent_lambda,
-            decoder_update_freq=cfg.agent.decoder_update_freq,
-            **agent_kwargs
-        )
-        agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
-        env.close()
+    # 3) instantiate & train
+    agent = DQNAgentAErecon(
+        decoder_latent_lambda=cfg.agent.decoder_latent_lambda,
+        decoder_update_freq=cfg.agent.decoder_update_freq,
+        **agent_kwargs
+    )
+    agent.train(cfg.train.num_train_steps, cfg.train.eval_interval)
 
 
 if __name__ == "__main__":
