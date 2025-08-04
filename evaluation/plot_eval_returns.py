@@ -7,7 +7,7 @@ from rliable.plot_utils import plot_sample_efficiency_curve
 
 
 seeds = [7668, 6094, 6720, 4685, 5577, 1035, 5224, 6389, 9873, 1996]
-algos = ['AEForward', 'RI']
+algos = ['AEForward_2LL', 'AEForward_Detach', 'AEForward_2M_Detach', 'AEForward', 'RI', 'AERecon']
 n_seeds = len(seeds)
 
 # Read data from different runs
@@ -15,8 +15,8 @@ n_seeds = len(seeds)
 eval_dfs = []
 for algo in algos:
     for seed in seeds:
-        df = pd.read_csv(f'evaluation/results/{algo}/DQNAgent{algo}_eval_log_seed{seed}.csv', sep=';')
-        df = df[['Eval-Interval', 'Episode-Reward']].groupby('Eval-Interval').sum()
+        df = pd.read_csv(f'evaluation/results/{algo}/DQNAgent{"AEForward" if algo.startswith("AEForward") else algo}_eval_log_seed{seed}.csv', sep=';')
+        df = df[['Eval-Interval', 'Episode-Reward']].groupby('Eval-Interval').mean()
         df["algo"] = algo
         df["seed"] = seed
         eval_dfs.append(df)
@@ -28,6 +28,10 @@ steps = (np.arange(20) + 1) * 1250
 train_scores = {
     "Raw-Image": eval_df.loc[eval_df['algo'] == 'RI']["Episode-Reward"].to_numpy().reshape((n_seeds, -1)),
     "AE-Forward": eval_df.loc[eval_df['algo'] == 'AEForward']["Episode-Reward"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Forward-2LL": eval_df.loc[eval_df['algo'] == 'AEForward_2LL']["Episode-Reward"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Forward-Detach": eval_df.loc[eval_df['algo'] == 'AEForward_Detach']["Episode-Reward"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Forward-2M-Detach": eval_df.loc[eval_df['algo'] == 'AEForward_2M_Detach']["Episode-Reward"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Recon": eval_df.loc[eval_df['algo'] == 'AERecon']["Episode-Reward"].to_numpy().reshape((n_seeds, -1)),
 }
 
 # This aggregates only IQM, but other options include mean and median
@@ -51,7 +55,14 @@ plot_sample_efficiency_curve(
     steps,
     iqm_scores,
     iqm_cis,
-    algorithms=["Raw-Image", "AE-Forward"],
+    algorithms=[
+        "Raw-Image",
+        # "AE-Forward",
+        # "AE-Forward-2LL",
+        # "AE-Forward-Detach",
+        "AE-Forward-2M-Detach",
+        "AE-Recon"
+    ],
     xlabel="Time Steps",
     ylabel="IQM Evaluation Return",
 )
@@ -76,7 +87,14 @@ plot_sample_efficiency_curve(
     steps,
     median_scores,
     median_cis,
-    algorithms=["Raw-Image", "AE-Forward"],
+    algorithms=[
+        "Raw-Image",
+        # "AE-Forward",
+        # "AE-Forward-2LL",
+        # "AE-Forward-Detach",
+        "AE-Forward-2M-Detach",
+        "AE-Recon"
+    ],
     xlabel="Time Steps",
     ylabel="Median Evaluation Return",
 )
@@ -101,7 +119,14 @@ plot_sample_efficiency_curve(
     steps,
     mean_scores,
     mean_cis,
-    algorithms=["Raw-Image", "AE-Forward"],
+    algorithms=[
+        "Raw-Image",
+        # "AE-Forward",
+        # "AE-Forward-2LL",
+        # "AE-Forward-Detach",
+        "AE-Forward-2M-Detach",
+        "AE-Recon"
+    ],
     xlabel="Time Steps",
     ylabel="Mean Evaluation Return",
 )

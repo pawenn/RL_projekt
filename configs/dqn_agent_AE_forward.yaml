@@ -24,7 +24,7 @@ agent:
   forward_latent_lambda: 1e-6
 
 train:
-  num_train_steps: 25000
+  num_train_steps: 30000
   eval_interval: 1250
   record_video: false
   eval_episodes: 5

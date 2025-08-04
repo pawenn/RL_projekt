@@ -7,7 +7,7 @@ from rliable.plot_utils import plot_sample_efficiency_curve
 
 
 seeds = [7668, 6094, 6720, 4685, 5577, 1035, 5224, 6389, 9873, 1996]
-algos = ['AEForward', 'RI']
+algos = ['AEForward_2M_Detach', 'RI']
 n_seeds = len(seeds)
 
 # Read data from different runs
@@ -15,20 +15,24 @@ n_seeds = len(seeds)
 eval_dfs = []
 for algo in algos:
     for seed in seeds:
-        df = pd.read_csv(f'evaluation/results/{algo}/DQNAgent{algo}_training_log_seed{seed}.csv', sep=';')
-        df["algo"] = algo
-        df["seed"] = seed
-        eval_dfs.append(df)
+        df = pd.read_csv(f'evaluation/results/{algo}/DQNAgent{"AEForward" if algo.startswith("AEForward") else algo}_training_log_seed{seed}.csv', sep=';')
+        df['interval'] = df['Timestep'] // 1000
+        aggregated = df.groupby('interval').agg({
+            'TD_std': 'mean'  # or 'sum', 'max', etc.
+        }).reset_index()
+        aggregated["algo"] = algo
+        aggregated["seed"] = seed
+        eval_dfs.append(aggregated)
 print("Read csv-files")
 eval_df = pd.concat(eval_dfs, ignore_index=True)
 print("Concatenated dataframes")
 
-steps = list(range(32, 25001))
+steps = np.unique(eval_df['interval'].values) * 1000
 
 # You can add other algorithms here
 train_scores = {
     "Raw-Image": eval_df.loc[eval_df['algo'] == 'RI']["TD_std"].to_numpy().reshape((n_seeds, -1)),
-    "AE-Forward": eval_df.loc[eval_df['algo'] == 'AEForward']["TD_std"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Forward": eval_df.loc[eval_df['algo'] == 'AEForward_2M_Detach']["TD_std"].to_numpy().reshape((n_seeds, -1)),
 }
 print("Reshaped dataframes")
 
@@ -41,30 +45,30 @@ iqm = lambda scores: np.array(  # noqa: E731
 median = lambda scores: np.median(scores, axis=0)
 mean = lambda scores: np.mean(scores, axis=0)
 
-# iqm_scores, iqm_cis = get_interval_estimates(
-#     train_scores,
-#     iqm,
-#     reps=2000,
-# )
-# print("Computed IQM scores")
-# 
-# 
-# # This is a utility function, but you can also just use a normal line plot with the IQM and CI scores
-# plot_sample_efficiency_curve(
-#     steps,
-#     iqm_scores,
-#     iqm_cis,
-#     algorithms=["Raw-Image", "AE-Forward"],
-#     xlabel="Time Steps",
-#     ylabel="IQM Standard Deviation of TD-Error per Update-Batch",
-# )
-# plt.gcf().canvas.manager.set_window_title("IQM TD-noise")
-# plt.legend()
-# plt.tight_layout()
-# plt.savefig("evaluation/plots/td_noise/td_noise_IQM.png")
-# plt.savefig("evaluation/plots/td_noise/td_noise_IQM.pdf")
-# plt.savefig("evaluation/plots/td_noise/td_noise_IQM.svg")
-# plt.show()
+iqm_scores, iqm_cis = get_interval_estimates(
+    train_scores,
+    iqm,
+    reps=2000,
+)
+print("Computed IQM scores")
+
+
+# This is a utility function, but you can also just use a normal line plot with the IQM and CI scores
+plot_sample_efficiency_curve(
+    steps,
+    iqm_scores,
+    iqm_cis,
+    algorithms=["Raw-Image", "AE-Forward"],
+    xlabel="Time Steps",
+    ylabel="IQM Standard Deviation of TD-Error per Update-Batch",
+)
+plt.gcf().canvas.manager.set_window_title("IQM TD-noise")
+plt.legend()
+plt.tight_layout()
+plt.savefig("evaluation/plots/td_noise/td_noise_IQM.png")
+plt.savefig("evaluation/plots/td_noise/td_noise_IQM.pdf")
+plt.savefig("evaluation/plots/td_noise/td_noise_IQM.svg")
+plt.show()
 
 
 

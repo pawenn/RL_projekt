@@ -17,7 +17,15 @@
     - requirements.txt          Jakob
     - seeds for experiments     Jakob
 
+    - run again for 30,000 timesteps
+        - RI and recon  Paul
+        - forward       Jakob
     - script for visualization
+        - td-noise aggregate for 1000 time-steps:
+            - IQM, median, mean for td-std  Jakob
+            - td-mean +- std                Paul
+        - td-noise aggregate for each episode:
+            - same as above
 
 
 

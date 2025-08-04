@@ -24,7 +24,7 @@ agent:
   decoder_update_freq: 1
 
 train:
-  num_train_steps: 25000
+  num_train_steps: 30000
   eval_interval: 1250
   record_video: false
   eval_episodes: 5

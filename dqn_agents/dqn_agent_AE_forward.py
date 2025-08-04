@@ -147,7 +147,7 @@ class DQNAgentAEForward(DQNAgent):
 
     def update_forward_model(self, s, a, s_next):
         z = self.encoder(s) 
-        z_next = self.encoder(s_next)
+        z_next = self.encoder(s_next).detach()
 
         a_onehot = F.one_hot(a.squeeze(1), self.action_dim)
         z_next_pred = self.forward_model(z, a_onehot)
@@ -155,7 +155,7 @@ class DQNAgentAEForward(DQNAgent):
         forward_loss = F.mse_loss(z_next_pred, z_next)
         latent_loss = 0.5 * z.pow(2).sum(dim=1).mean()  # encourage latent magnitudes to be small
 
-        ae_loss = forward_loss + self.forward_latent_lambda * latent_loss
+        ae_loss = 2 * forward_loss + self.forward_latent_lambda * latent_loss
 
         self.encoder_optimizer.zero_grad()
         self.forward_optimizer.zero_grad()
