@@ -155,7 +155,7 @@ class DQNAgentAEForward(DQNAgent):
         forward_loss = F.mse_loss(z_next_pred, z_next)
         latent_loss = 0.5 * z.pow(2).sum(dim=1).mean()  # encourage latent magnitudes to be small
 
-        ae_loss = 2 * forward_loss + self.forward_latent_lambda * latent_loss
+        ae_loss = 2 * forward_loss + self.forward_latent_lambda * latent_loss  # increase influence of forward-loss
 
         self.encoder_optimizer.zero_grad()
         self.forward_optimizer.zero_grad()

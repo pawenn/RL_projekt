@@ -7,62 +7,76 @@ from rliable.plot_utils import plot_sample_efficiency_curve
 
 
 seeds = [7668, 6094, 6720, 4685, 5577, 1035, 5224, 6389, 9873, 1996]
-algos = ['AEForward_2M_Detach', 'RI']
+algos = [
+    'RI',
+    'AERecon',
+    'AEForward',
+]
 n_seeds = len(seeds)
-
-# Read data from different runs
-# This is the toy data, you can also build a proper loop over your own runs.
 eval_dfs = []
+
+
+# Read data; Compute aggregation-intervals (1000 steps to remove noise from update of target-network)
 for algo in algos:
     for seed in seeds:
-        df = pd.read_csv(f'evaluation/results/{algo}/DQNAgent{"AEForward" if algo.startswith("AEForward") else algo}_training_log_seed{seed}.csv', sep=';')
-        df['interval'] = df['Timestep'] // 1000
+        df = pd.read_csv(f'evaluation/results/{algo}/DQNAgent{algo}_training_log_seed{seed}.csv', sep=';')
+        # Aggregate for intervals of 1000 steps (same as target network update frequency)
+        df['interval'] = (df['Timestep'] - 1) // 1000  # -1, so that the last step is not its own interval
         aggregated = df.groupby('interval').agg({
-            'TD_std': 'mean'  # or 'sum', 'max', etc.
+            'TD_std': 'mean'
         }).reset_index()
+
         aggregated["algo"] = algo
         aggregated["seed"] = seed
         eval_dfs.append(aggregated)
+
 print("Read csv-files")
 eval_df = pd.concat(eval_dfs, ignore_index=True)
 print("Concatenated dataframes")
 
-steps = np.unique(eval_df['interval'].values) * 1000
+steps = (np.arange(30) + 1) * 1000
 
-# You can add other algorithms here
-train_scores = {
+
+# Get std-values of td-error for each algorithm
+td_error_std_values = {
     "Raw-Image": eval_df.loc[eval_df['algo'] == 'RI']["TD_std"].to_numpy().reshape((n_seeds, -1)),
-    "AE-Forward": eval_df.loc[eval_df['algo'] == 'AEForward_2M_Detach']["TD_std"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Reconstruction": eval_df.loc[eval_df['algo'] == 'AERecon']["TD_std"].to_numpy().reshape((n_seeds, -1)),
+    "AE-Forward-Prediction": eval_df.loc[eval_df['algo'] == 'AEForward']["TD_std"].to_numpy().reshape((n_seeds, -1)),
 }
 print("Reshaped dataframes")
 
-# This aggregates only IQM, but other options include mean and median
-# Optimality gap exists, but you obviously need optimal scores for that
-# If you want to use it, check their code
-iqm = lambda scores: np.array(  # noqa: E731
+
+# Metrics
+iqm = lambda scores: np.array(
     [metrics.aggregate_iqm(scores[:, eval_idx]) for eval_idx in range(scores.shape[-1])]
 )
 median = lambda scores: np.median(scores, axis=0)
 mean = lambda scores: np.mean(scores, axis=0)
 
+
+
+# IQM - STD
 iqm_scores, iqm_cis = get_interval_estimates(
-    train_scores,
+    td_error_std_values,
     iqm,
     reps=2000,
 )
 print("Computed IQM scores")
 
-
-# This is a utility function, but you can also just use a normal line plot with the IQM and CI scores
 plot_sample_efficiency_curve(
     steps,
     iqm_scores,
     iqm_cis,
-    algorithms=["Raw-Image", "AE-Forward"],
+    algorithms=[
+        "Raw-Image",
+        "AE-Reconstruction",
+        "AE-Forward-Prediction",
+    ],
     xlabel="Time Steps",
-    ylabel="IQM Standard Deviation of TD-Error per Update-Batch",
+    ylabel="IQM of Avg TD-Error-STD",
 )
 plt.gcf().canvas.manager.set_window_title("IQM TD-noise")
+plt.title("IQM of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)")
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/td_noise/td_noise_IQM.png")
@@ -72,23 +86,28 @@ plt.show()
 
 
 
+# Median - STD
 median_scores, median_cis = get_interval_estimates(
-    train_scores,
+    td_error_std_values,
     median,
     reps=2000,
 )
 print("Computed median scores")
 
-# This is a utility function, but you can also just use a normal line plot with the IQM and CI scores
 plot_sample_efficiency_curve(
     steps,
     median_scores,
     median_cis,
-    algorithms=["Raw-Image", "AE-Forward"],
+    algorithms=[
+        "Raw-Image",
+        "AE-Reconstruction",
+        "AE-Forward-Prediction",
+    ],
     xlabel="Time Steps",
-    ylabel="Median Standard Deviation of TD-Error per Update-Batch",
+    ylabel="Median of Avg TD-Error-STD",
 )
 plt.gcf().canvas.manager.set_window_title("Median TD-noise")
+plt.title("Median of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)")
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/td_noise/td_noise_median.png")
@@ -98,23 +117,28 @@ plt.show()
 
 
 
+# Mean - STD
 mean_scores, mean_cis = get_interval_estimates(
-    train_scores,
+    td_error_std_values,
     mean,
     reps=2000,
 )
 print("Computed mean scores")
 
-# This is a utility function, but you can also just use a normal line plot with the IQM and CI scores
 plot_sample_efficiency_curve(
     steps,
     mean_scores,
     mean_cis,
-    algorithms=["Raw-Image", "AE-Forward"],
+    algorithms=[
+        "Raw-Image",
+        "AE-Reconstruction",
+        "AE-Forward-Prediction",
+    ],
     xlabel="Time Steps",
-    ylabel="Mean Standard Deviation of TD-Error per Update-Batch",
+    ylabel="Mean of Avg TD-Error-STD",
 )
 plt.gcf().canvas.manager.set_window_title("Mean TD-noise")
+plt.title("Mean of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)")
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/td_noise/td_noise_mean.png")
