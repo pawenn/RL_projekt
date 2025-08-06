@@ -61,11 +61,18 @@ iqm_scores, iqm_cis = get_interval_estimates(
 )
 print("Computed IQM scores")
 
-fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
 
 for i, algo in enumerate(algo_names):
     color = sns.color_palette("colorblind")[i+1]
-    axs[i].plot(steps, iqm_scores[algo], label=algo, color=color, marker='o')
+    axs[i].plot(
+        steps,
+        iqm_scores[algo],
+        label=algo,
+        color=color,
+        marker='o',
+        linewidth=2
+    )
     lower, upper = iqm_cis[algo]
     axs[i].fill_between(steps, lower, upper, color=color, alpha=0.2)
     axs[i].set_ylabel("Aux-Loss", fontsize='xx-large')
@@ -90,11 +97,18 @@ median_scores, median_cis = get_interval_estimates(
 )
 print("Computed median scores")
 
-fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
 
 for i, algo in enumerate(algo_names):
     color = sns.color_palette("colorblind")[i+1]
-    axs[i].plot(steps, median_scores[algo], label=algo, color=color, marker='o')
+    axs[i].plot(
+        steps,
+        median_scores[algo],
+        label=algo,
+        color=color,
+        marker='o',
+        linewidth=2
+    )
     lower, upper = median_cis[algo]
     axs[i].fill_between(steps, lower, upper, color=color, alpha=0.2)
     axs[i].set_ylabel("Aux-Loss", fontsize='xx-large')
@@ -119,11 +133,18 @@ mean_scores, mean_cis = get_interval_estimates(
 )
 print("Computed mean scores")
 
-fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
 
 for i, algo in enumerate(algo_names):
     color = sns.color_palette("colorblind")[i+1]
-    axs[i].plot(steps, mean_scores[algo], label=algo, color=color, marker='o')
+    axs[i].plot(
+        steps,
+        mean_scores[algo],
+        label=algo,
+        color=color,
+        marker='o',
+        linewidth=2
+    )
     lower, upper = mean_cis[algo]
     axs[i].fill_between(steps, lower, upper, color=color, alpha=0.2)
     axs[i].set_ylabel("Aux-Loss", fontsize='xx-large')
