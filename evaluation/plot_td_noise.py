@@ -76,7 +76,7 @@ plot_sample_efficiency_curve(
     ylabel="IQM of Avg TD-Error-STD",
 )
 plt.gcf().canvas.manager.set_window_title("IQM TD-noise")
-plt.title("IQM of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)")
+plt.title("IQM of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/td_noise/td_noise_IQM.png")
@@ -107,7 +107,7 @@ plot_sample_efficiency_curve(
     ylabel="Median of Avg TD-Error-STD",
 )
 plt.gcf().canvas.manager.set_window_title("Median TD-noise")
-plt.title("Median of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)")
+plt.title("Median of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/td_noise/td_noise_median.png")
@@ -138,7 +138,7 @@ plot_sample_efficiency_curve(
     ylabel="Mean of Avg TD-Error-STD",
 )
 plt.gcf().canvas.manager.set_window_title("Mean TD-noise")
-plt.title("Mean of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)")
+plt.title("Mean of Average TD-Error Standard Deviation\nfor 1000 Batch-Updates (across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/td_noise/td_noise_mean.png")

@@ -77,7 +77,7 @@ plot_sample_efficiency_curve(
     ylabel="IQM of Avg Loss per 1000 steps",
 )
 plt.gcf().canvas.manager.set_window_title("IQM of Average Loss per 1000 Steps (across 10 Seeds)")
-plt.title("IQM of Average Loss per 1000 Steps (across 10 Seeds)")
+plt.title("IQM of Average Loss per 1000 Steps\n(across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/loss/loss_IQM.png")
@@ -108,7 +108,7 @@ plot_sample_efficiency_curve(
     ylabel="Median of Avg Loss per 1000 steps",
 )
 plt.gcf().canvas.manager.set_window_title("Median of Average Loss per 1000 Steps (across 10 Seeds)")
-plt.title("Median of Average Loss per 1000 Steps (across 10 Seeds)")
+plt.title("Median of Average Loss per 1000 Steps\n(across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/loss/loss_median.png")
@@ -139,7 +139,7 @@ plot_sample_efficiency_curve(
     ylabel="Mean of Avg Loss per 1000 steps",
 )
 plt.gcf().canvas.manager.set_window_title("Mean of Average Loss per 1000 Steps (across 10 Seeds)")
-plt.title("Mean of Average Loss per 1000 Steps (across 10 Seeds)")
+plt.title("Mean of Average Loss per 1000 Steps\n(across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/loss/loss_mean.png")

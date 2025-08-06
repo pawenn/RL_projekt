@@ -65,8 +65,8 @@ plot_sample_efficiency_curve(
     xlabel="Time Steps",
     ylabel="IQM of Avg Evaluation Return",
 )
-plt.gcf().canvas.manager.set_window_title("IQM of Average Return for 5 Evaluation Episodes (across 10 Seeds)")
-plt.title("IQM of Average Return for 5 Evaluation Episodes (across 10 Seeds)")
+plt.gcf().canvas.manager.set_window_title("IQM of Average Return for5 Evaluation Episodes (across 10 Seeds)")
+plt.title("IQM of Average Return for\n5 Evaluation Episodes (across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/eval_returns/eval_return_IQM.png")
@@ -96,7 +96,7 @@ plot_sample_efficiency_curve(
     ylabel="Median of Avg Evaluation Return",
 )
 plt.gcf().canvas.manager.set_window_title("Median of Average Return for 5 Evaluation Episodes (across 10 Seeds)")
-plt.title("Median of Average Return for 5 Evaluation Episodes (across 10 Seeds)")
+plt.title("Median of Average Return for\n5 Evaluation Episodes (across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/eval_returns/eval_return_median.png")
@@ -126,7 +126,7 @@ plot_sample_efficiency_curve(
     ylabel="Mean of Avg Evaluation Return",
 )
 plt.gcf().canvas.manager.set_window_title("Mean of Average Return for 5 Evaluation Episodes (across 10 Seeds)")
-plt.title("Mean of Average Return for 5 Evaluation Episodes (across 10 Seeds)")
+plt.title("Mean of Average Return for\n5 Evaluation Episodes (across 10 Seeds)", fontsize='xx-large')
 plt.legend()
 plt.tight_layout()
 plt.savefig("evaluation/plots/eval_returns/eval_return_mean.png")

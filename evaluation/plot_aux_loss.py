@@ -68,12 +68,12 @@ for i, algo in enumerate(algo_names):
     axs[i].plot(steps, iqm_scores[algo], label=algo, color=color, marker='o')
     lower, upper = iqm_cis[algo]
     axs[i].fill_between(steps, lower, upper, color=color, alpha=0.2)
-    axs[i].set_ylabel("IQM of Avg Aux-Loss")
+    axs[i].set_ylabel("Aux-Loss", fontsize='xx-large')
     axs[i].legend()
     axs[i].grid(True)
 
-axs[1].set_xlabel("Time Steps")
-fig.suptitle("IQM of Average Auxiliary Loss per 1000 Steps (across 10 Seeds)")
+axs[1].set_xlabel("Time Steps", fontsize='xx-large')
+fig.suptitle("IQM of Average Auxiliary Loss\nper 1000 Steps (across 10 Seeds)", fontsize='xx-large')
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.savefig("evaluation/plots/aux_loss/aux_loss_IQM_split.pdf")
 plt.savefig("evaluation/plots/aux_loss/aux_loss_IQM_split.png")
@@ -97,12 +97,12 @@ for i, algo in enumerate(algo_names):
     axs[i].plot(steps, median_scores[algo], label=algo, color=color, marker='o')
     lower, upper = median_cis[algo]
     axs[i].fill_between(steps, lower, upper, color=color, alpha=0.2)
-    axs[i].set_ylabel("Median of Avg Aux-Loss")
+    axs[i].set_ylabel("Aux-Loss", fontsize='xx-large')
     axs[i].legend()
     axs[i].grid(True)
 
-axs[1].set_xlabel("Time Steps")
-fig.suptitle("Median of Average Auxiliary Loss per 1000 Steps (across 10 Seeds)")
+axs[1].set_xlabel("Time Steps", fontsize='xx-large')
+fig.suptitle("Median of Average Auxiliary Loss\nper 1000 Steps (across 10 Seeds)", fontsize='xx-large')
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.savefig("evaluation/plots/aux_loss/aux_loss_median_split.pdf")
 plt.savefig("evaluation/plots/aux_loss/aux_loss_median_split.png")
@@ -126,12 +126,12 @@ for i, algo in enumerate(algo_names):
     axs[i].plot(steps, mean_scores[algo], label=algo, color=color, marker='o')
     lower, upper = mean_cis[algo]
     axs[i].fill_between(steps, lower, upper, color=color, alpha=0.2)
-    axs[i].set_ylabel("Mean of Avg Aux-Loss")
+    axs[i].set_ylabel("Aux-Loss", fontsize='xx-large')
     axs[i].legend()
     axs[i].grid(True)
 
-axs[1].set_xlabel("Time Steps")
-fig.suptitle("Mean of Average Auxiliary Loss per 1000 Steps (across 10 Seeds)")
+axs[1].set_xlabel("Time Steps", fontsize='xx-large')
+fig.suptitle("Mean of Average Auxiliary Loss\nper 1000 Steps (across 10 Seeds)", fontsize='xx-large')
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.savefig("evaluation/plots/aux_loss/aux_loss_mean_split.pdf")
 plt.savefig("evaluation/plots/aux_loss/aux_loss_mean_split.png")
