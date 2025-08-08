@@ -4,6 +4,9 @@ import torch.nn.functional as F
 
 
 class ForwardModel(nn.Module):
+    """
+    Model to predict the next latent state using the current latent state and selected action.
+    """
 
     def __init__(self, latent_dim=50, action_dim=5, hidden_dim=128):
         super(ForwardModel, self).__init__()

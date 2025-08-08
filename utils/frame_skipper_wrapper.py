@@ -1,6 +1,10 @@
 import gymnasium as gym
 
+
 class SkipFrame(gym.Wrapper):
+    """
+    Environment-Wrapper to repeat the same action for 'skip'-many frames.
+    """
     def __init__(self, env, skip):
         super().__init__(env)
         self._skip = skip

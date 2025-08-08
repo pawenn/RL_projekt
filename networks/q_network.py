@@ -3,23 +3,6 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
-
-# class QFunction(nn.Module):
-#     """MLP for q-function."""
-#     def __init__(self, obs_dim, action_dim, hidden_dim):
-#         super().__init__()
-# 
-#         self.trunk = nn.Sequential(
-#             nn.Linear(obs_dim + action_dim, hidden_dim), nn.ReLU(),
-#             nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
-#             nn.Linear(hidden_dim, 1)
-#         )
-# 
-#     def forward(self, obs, action):
-#         assert obs.size(0) == action.size(0)
-# 
-#         obs_action = torch.cat([obs, action], dim=1)
-#         return self.trunk(obs_action)
     
 
 class QNetwork(nn.Module):
@@ -71,4 +54,3 @@ class QNetwork(nn.Module):
             Q‐values, shape (batch, n_actions).
         """
         return self.net(x)
-

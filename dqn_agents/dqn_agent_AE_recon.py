@@ -29,7 +29,20 @@ class DQNAgentAErecon(DQNAgent):
         decoder_update_freq = 1, 
         **kwargs
         ):
+        """
+        Initialize Reconstruction DQN-Agent
 
+        Parameters
+        ----------
+        num_conv_layers : int
+            Number of Conv2d layers in the Encoder.
+        num_conv_filters : int
+            Number of filters per Conv2d layer in the Encoder.
+        decoder_latent_lambda : float
+            Update weight for L2 penalty on latent representation
+        decoder_update_freq : int
+            After how many update-steps of the target-network the decoder and encoder are updated using reconstruction
+        """
         super().__init__(**kwargs)
         self.decoder_update_freq = decoder_update_freq
         obs_shape = self.env.observation_space.shape

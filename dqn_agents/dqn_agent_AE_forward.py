@@ -30,6 +30,20 @@ class DQNAgentAEForward(DQNAgent):
         forward_latent_lambda: float = 1e-6,
         **kwargs
         ):
+        """
+        Initialize Forward-Prediction DQN-Agent
+
+        Parameters
+        ----------
+        num_conv_layers : int
+            Number of Conv2d layers in the Encoder.
+        num_conv_filters : int
+            Number of filters per Conv2d layer in the Encoder.
+        forward_model_update_freq : int
+            After how many update-steps of the target-network the forward-model is updated
+        forward_latent_lambda : float
+            Update weight for L2 penalty on latent representation
+        """
         super().__init__(
             **kwargs
         )

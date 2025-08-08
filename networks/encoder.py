@@ -8,15 +8,11 @@ def tie_weights(src, trg):
     trg.bias = src.bias
 
 
-#OUT_DIM = {2: 39, 4: 35, 6: 31}
-OUT_DIM = {4: 41}
 
 class PixelEncoder(nn.Module):
     """Convolutional encoder of pixels observations."""
     def __init__(self, obs_shape, feature_dim, num_layers=2, num_filters=32):
         super().__init__()
-
-        # assert len(obs_shape) == 3
 
         self.feature_dim = feature_dim
         self.num_layers = num_layers
@@ -28,7 +24,7 @@ class PixelEncoder(nn.Module):
             self.convs.append(nn.Conv2d(num_filters, num_filters, 3, stride=1))
 
         with torch.no_grad():
-            dummy_input = torch.zeros(1, *obs_shape)  # e.g., [1, 3, 84, 84]
+            dummy_input = torch.zeros(1, *obs_shape)
             x = dummy_input
             for conv in self.convs:
                 x = conv(x)
