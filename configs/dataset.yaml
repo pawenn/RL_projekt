@@ -1,6 +1,0 @@
-env_name: CarRacing-v3
-num_episodes: 20
-max_steps: 100
-save_dir: data/CarRacing-v3-frames-test
-save_as_images: true
-stack_size: 4

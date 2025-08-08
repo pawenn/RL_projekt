@@ -1,0 +1,30 @@
+seed: 1234
+seeds: [7668, 6094, 6720, 4685, 5577, 1035, 5224, 6389, 9873, 1996]
+
+device: "cuda" 
+
+env:
+  name: "CarRacing-v3"
+  frame_stack: 3
+  skip_frames: 4
+
+agent:
+  buffer_capacity: 10000
+  batch_size: 32
+  lr: 0.001
+  gamma: 0.99
+  epsilon_start: 1.0
+  epsilon_final: 0.01
+  epsilon_decay: 500
+  target_update_freq: 1000
+  feature_dim: 50
+  num_conv_layers: 4
+  num_conv_filters: 32
+  forward_model_update_freq: 1
+  forward_latent_lambda: 1e-6
+
+train:
+  num_train_steps: 30000
+  eval_interval: 1250
+  record_video: false
+  eval_episodes: 5
