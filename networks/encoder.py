@@ -8,6 +8,8 @@ def tie_weights(src, trg):
     trg.bias = src.bias
 
 
+OUT_DIM = {4: 41}
+
 
 class PixelEncoder(nn.Module):
     """Convolutional encoder of pixels observations."""
