@@ -1,4 +1,4 @@
-# Reinforcement Learning - Project
+# Model-Free TD Learning in DQN: A Comparison of Reconstruction and Forward Prediction
 
 This repository contains the code used for training and evaluating the three DQN-agents on the CarRacing-v3 environment.
 These work either only with the raw-images through a CNN, or with an auxiliary loss from an auto-encoder, namely through reconstruction or forward-prediction.
@@ -52,7 +52,7 @@ This directory contains environment-wrappers used for training all three agents:
 
 ### Video
 
-The `VideoRecorder` can be used to record videos of the agent during training. Can be used by the setting the `train.record_video` option in the corresponding .yaml-file to true (taken from ???).
+The `VideoRecorder` can be used to record videos of the agent during training (taken from [SAC-AE](https://github.com/denisyarats/pytorch_sac_ae)). Can be used by the setting the `train.record_video` option in the corresponding .yaml-file to true.
 
 ### Evaluation
 
@@ -64,5 +64,5 @@ This directory includes:
 
 ## Experiment-Info
 
-- The experiments for the raw-image and reconstruction agents were run on ???.
+- The experiments for the raw-image and reconstruction agents were run on .
 - The experiments for forward-prediction agents were run on a Windows-PC using a Nvidia GeForce RTX 3060 GPU.
