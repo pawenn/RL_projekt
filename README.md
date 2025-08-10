@@ -1,5 +1,4 @@
-# Model-Free TD Learning in DQN: 
-# A Comparison of Reconstruction and Forward Prediction
+# Model-Free TD Learning in DQN:<br>A Comparison of Reconstruction and Forward Prediction
 
 This repository contains the code used for training and evaluating the three DQN-agents on the CarRacing-v3 environment.
 These work either only with the raw-images through a CNN, or with an auxiliary loss from an auto-encoder, namely through reconstruction or forward-prediction.
