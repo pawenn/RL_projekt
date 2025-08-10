@@ -35,7 +35,7 @@ These .yaml-files contain the hyperparameter-configurations for training the age
 ### Networks
 
 This directory includes the neural networks used by the agent:
-- `QNetwork`: The network-class used to calculate the q-values.
+- `QNetwork`: The network-class used to calculate the Q-values.
 - `PixelEncoder`: The encoder-class used by all three agents, be it as a CNN for only working with the frames, or as an encoder for reconstruction or forward-prediction (taken from [SAC-AE](https://github.com/denisyarats/pytorch_sac_ae)).
 - `PixelDecoder`: The decoder-class used by the reconstruction-agent (taken from [SAC-AE](https://github.com/denisyarats/pytorch_sac_ae)).
 - `ForwardModel`: The network used by the agent performing forward-prediction.
