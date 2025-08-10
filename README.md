@@ -64,5 +64,5 @@ This directory includes:
 
 ## Experiment-Info
 
-- The experiments for the raw-image and reconstruction agents were run on .
+- The experiments for the raw-image and reconstruction agents were run on a Windows-PC using a NVIDIA GeForce RTX 2070 SUPER.
 - The experiments for forward-prediction agents were run on a Windows-PC using a Nvidia GeForce RTX 3060 GPU.
